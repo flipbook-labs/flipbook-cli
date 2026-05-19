@@ -1,0 +1,49 @@
+name: Deploy Storybook PR Preview
+description: >
+  Uploads a PR's storybooks to the shared Flipbook preview experience via Open Cloud
+  Luau Execution, then posts or updates a PR comment with the preview link.
+
+inputs:
+  mode:
+    description: '"deploy" for opened/updated PRs, "cleanup" for closed PRs.'
+    required: false
+    default: deploy
+  pr-number:
+    description: Pull request number.
+    required: true
+  roblox-api-key:
+    required: true
+  roblox-storybook-universe-id:
+    required: true
+  roblox-storybook-place-id:
+    required: true
+  github-token:
+    required: true
+  roblox-creator-user-id:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: CompeyDev/setup-rokit@v0.1.2
+      with:
+        version: v1.2.0
+
+    - name: Install dependencies
+      shell: bash
+      run: lute run install
+
+    - name: Create .env
+      shell: bash
+      run: cp .env.template .env
+
+    - name: Deploy/cleanup PR storybook
+      shell: bash
+      env:
+        ROBLOX_API_KEY: ${{ inputs.roblox-api-key }}
+        ROBLOX_STORYBOOK_UNIVERSE_ID: ${{ inputs.roblox-storybook-universe-id }}
+        ROBLOX_STORYBOOK_PLACE_ID: ${{ inputs.roblox-storybook-place-id }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        ROBLOX_CREATOR_USER_ID: ${{ inputs.roblox-creator-user-id }}
+      run: lute run ./.github/actions/deploy-storybook/deploy-storybook ${{ inputs.mode }} --pr ${{ inputs.pr-number }}
