@@ -1,4 +1,4 @@
--- Runs inside Roblox via Open Cloud Luau Execution.
+return [[
 local RUNTIME_ASSET_ID = assert(tonumber(_G.RUNTIME_ASSET_ID), "RUNTIME_ASSET_ID global is required")
 
 local AssetService = game:GetService("AssetService")
@@ -14,3 +14,4 @@ runtime.Name = "Flipbook"
 runtime.Parent = rs
 
 AssetService:SavePlaceAsync()
+]]

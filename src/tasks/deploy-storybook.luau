@@ -1,3 +1,4 @@
+return [[
 local AssetService = game:GetService("AssetService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,3 +22,4 @@ model.Name = "pr-" .. PR_NUMBER
 model.Parent = prStorybooks
 
 AssetService:SavePlaceAsync()
+]]

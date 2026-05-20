@@ -5,11 +5,11 @@ local comment = require("@root/comment")
 
 local function help()
 	print([[
-deploy-storybook comment
+flipbook-cli comment
 Post or update the storybook preview comment on a pull request.
 
 USAGE:
-  deploy-storybook comment [options]
+  flipbook-cli comment [options]
 
 REQUIRED:
   --pr <number>              Pull request number

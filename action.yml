@@ -5,7 +5,7 @@ description: >
 
 inputs:
   mode:
-    description: '"deploy" for opened/updated PRs, "cleanup" for closed PRs.'
+    description: '"deploy" for opened/updated PRs, "prune" for closed PRs.'
     required: false
     default: deploy
   pr-number:
@@ -19,8 +19,6 @@ inputs:
     required: true
   github-token:
     required: true
-  roblox-creator-user-id:
-    required: true
 
 runs:
   using: composite
@@ -29,15 +27,20 @@ runs:
       with:
         version: v1.2.0
 
-    - name: Install dependencies
+    - name: Install rokit tools
       shell: bash
-      run: lute run install
+      run: cd "${{ github.action_path }}" && rokit install
 
-    - name: Create .env
+    - name: Install loom dependencies
       shell: bash
-      run: cp .env.template .env
+      run: cd "${{ github.action_path }}" && lute pkg install
 
-    - name: Deploy/cleanup PR storybook
+    - name: Build flipbook-cli
+      shell: bash
+      run: cd "${{ github.action_path }}" && lute run .lute/build.luau
+
+    - name: Deploy PR storybook
+      if: inputs.mode != 'prune'
       shell: bash
       env:
         ROBLOX_API_KEY: ${{ inputs.roblox-api-key }}
@@ -45,5 +48,24 @@ runs:
         ROBLOX_STORYBOOK_PLACE_ID: ${{ inputs.roblox-storybook-place-id }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-        ROBLOX_CREATOR_USER_ID: ${{ inputs.roblox-creator-user-id }}
-      run: lute run ./.github/actions/deploy-storybook/deploy-storybook ${{ inputs.mode }} --pr ${{ inputs.pr-number }}
+        FLIPBOOK_TASKS_DIR: ${{ github.action_path }}/src/tasks
+      run: "${{ github.action_path }}/build/flipbook-cli deploy --pr ${{ inputs.pr-number }}"
+
+    - name: Post storybook preview comment
+      if: inputs.mode != 'prune'
+      shell: bash
+      env:
+        ROBLOX_STORYBOOK_PLACE_ID: ${{ inputs.roblox-storybook-place-id }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: "${{ github.action_path }}/build/flipbook-cli comment --pr ${{ inputs.pr-number }}"
+
+    - name: Prune PR storybook
+      if: inputs.mode == 'prune'
+      shell: bash
+      env:
+        ROBLOX_API_KEY: ${{ inputs.roblox-api-key }}
+        ROBLOX_STORYBOOK_UNIVERSE_ID: ${{ inputs.roblox-storybook-universe-id }}
+        ROBLOX_STORYBOOK_PLACE_ID: ${{ inputs.roblox-storybook-place-id }}
+        FLIPBOOK_TASKS_DIR: ${{ github.action_path }}/src/tasks
+      run: "${{ github.action_path }}/build/flipbook-cli prune --pr ${{ inputs.pr-number }}"

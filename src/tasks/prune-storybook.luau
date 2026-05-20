@@ -1,4 +1,4 @@
--- Runs inside Roblox via Open Cloud Luau Execution.
+return [[
 local PR_NUMBER = assert(tonumber(_G.PR_NUMBER), "PR_NUMBER global is required")
 
 local AssetService = game:GetService("AssetService")
@@ -13,3 +13,4 @@ if prStorybooks then
 end
 
 AssetService:SavePlaceAsync()
+]]

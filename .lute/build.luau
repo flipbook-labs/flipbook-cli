@@ -5,14 +5,17 @@ if not fs.exists("build") then
 	fs.createDirectory("build")
 end
 
-process.run({
+local compileArgs = {
 	"lute",
 	"compile",
 	"cli.luau",
 	"--output",
 	"build/flipbook-cli",
-	"--bundle-stats",
-	"--show-require-graph",
-}, {
+}
+
+table.insert(compileArgs, "--bundle-stats")
+table.insert(compileArgs, "--show-require-graph")
+
+process.run(compileArgs, {
 	stdio = "inherit",
 })

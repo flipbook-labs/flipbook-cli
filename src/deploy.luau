@@ -2,14 +2,21 @@ local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local fs = require("@std/fs")
 local json = require("@std/json")
 local net = require("@std/net")
+local path = require("@std/path")
 local process = require("@std/process")
 local system = require("@std/system")
 local task = require("@std/task")
-local toml = require("@batteries/toml")
 
+local config = require("@root/config")
+local createRojoProject = require("@root/createRojoProject")
+local readWallyVersion = require("@root/readWallyVersion")
 local runTask = require("@root/runTask")
+local storybookPreviewUrl = require("@root/storybookPreviewUrl")
+local deployStorybookScript = require("@root/tasks/deploy-storybook")
+local upgradeRuntimeScript = require("@root/tasks/upgrade-runtime")
 
 local run = FlipbookBatteries.run
+local buildRbxm = createRojoProject.buildRbxm
 
 local RUNTIME_VERSION_VARIABLE = "STORYBOOK_RUNTIME_VERSION"
 local function semverGt(a: string, b: string): boolean
@@ -32,11 +39,6 @@ local function semverGt(a: string, b: string): boolean
 	return false
 end
 
-local function readWallyVersion(): string
-	local manifest = toml.deserialize(fs.readFileToString("wally.toml")) :: any
-	return tostring(manifest.package.version)
-end
-
 local function uploadModel(rbxmPath: string, displayName: string, apiKey: string, creatorUserId: string): string
 	local requestJson = json.serialize({
 		assetType = "Model",
@@ -47,7 +49,7 @@ local function uploadModel(rbxmPath: string, displayName: string, apiKey: string
 	local requestJsonPath = rbxmPath .. ".request.json"
 	fs.writeStringToFile(requestJsonPath, requestJson)
 
-	local uploadOutput = run("curl", {
+	local uploadOutput = run(config.curlCmd, {
 		"-s",
 		"-X",
 		"POST",
@@ -115,27 +117,17 @@ export type DeployOptions = {
 	apiKey: string,
 	githubToken: string?,
 	repo: string?,
-	creatorUserId: string?,
 }
 
 local function deploy(options: DeployOptions)
-	local creatorUserId = options.creatorUserId or getCreatorUserId(options.universeId, options.apiKey)
-
-	run("lute", { "run", "build", "plugin", "--channel", "dev", "--clean" })
-
+	local creatorUserId = getCreatorUserId(options.universeId, options.apiKey)
 	local tmpDir = tostring(system.tmpdir())
-	local prRbxm = tmpDir .. "/pr-" .. options.prNumber .. ".rbxm"
-	local prProjectPath = tmpDir .. "/pr-" .. options.prNumber .. ".project.json"
-	fs.writeStringToFile(
-		prProjectPath,
-		json.serialize({
-			name = "pr-" .. options.prNumber,
-			emitLegacyScripts = false,
-			tree = { ["$path"] = tostring(process.cwd()) .. "/build/dev/roblox" },
-		})
-	)
-	run("rojo", { "build", prProjectPath, "-o", prRbxm })
-	fs.remove(prProjectPath)
+	local cwd = tostring(process.cwd())
+
+	run(config.luteCmd, { "run", "build", "plugin", "--channel", "dev", "--clean" })
+
+	local prRbxm = path.join(tmpDir, "pr-" .. options.prNumber .. ".rbxm")
+	buildRbxm("pr-" .. options.prNumber, path.join(cwd, "build", "dev", "roblox"), prRbxm)
 
 	local storybookAssetId = assert(
 		tonumber(uploadModel(prRbxm, "pr-" .. options.prNumber, options.apiKey, creatorUserId)),
@@ -148,7 +140,7 @@ local function deploy(options: DeployOptions)
 		else false
 
 	runTask(
-		".github/actions/deploy-storybook/tasks/deploy-storybook.luau",
+		deployStorybookScript,
 		{ PR_NUMBER = options.prNumber, STORYBOOK_ASSET_ID = storybookAssetId },
 		options.universeId,
 		options.placeId,
@@ -156,35 +148,34 @@ local function deploy(options: DeployOptions)
 	)
 
 	if upgradeRuntime then
-		run("lute", { "run", "build", "plugin", "--channel", "prod", "--clean" })
-		local runtimeRbxm = tmpDir .. "/runtime.rbxm"
-		local runtimeProjectPath = tmpDir .. "/runtime.project.json"
-		fs.writeStringToFile(
-			runtimeProjectPath,
-			json.serialize({
-				name = "Flipbook",
-				emitLegacyScripts = false,
-				tree = { ["$path"] = tostring(process.cwd()) .. "/build/prod/roblox" },
-			})
-		)
-		run("rojo", { "build", runtimeProjectPath, "-o", runtimeRbxm })
-		fs.remove(runtimeProjectPath)
+		run(config.luteCmd, { "run", "build", "plugin", "--channel", "prod", "--clean" })
+		local runtimeRbxm = path.join(tmpDir, "runtime.rbxm")
+		buildRbxm("Flipbook", path.join(cwd, "build", "prod", "roblox"), runtimeRbxm)
 		local runtimeAssetId = assert(
 			tonumber(uploadModel(runtimeRbxm, "Flipbook", options.apiKey, creatorUserId)),
 			"invalid runtimeAssetId returned from Assets API"
 		)
 		runTask(
-			".github/actions/deploy-storybook/tasks/upgrade-runtime.luau",
+			upgradeRuntimeScript,
 			{ RUNTIME_ASSET_ID = runtimeAssetId },
 			options.universeId,
 			options.placeId,
 			options.apiKey
 		)
-		run("gh", { "variable", "set", RUNTIME_VERSION_VARIABLE, "--body", currentVersion })
+		if options.repo then
+			run(config.ghCmd, {
+				"variable",
+				"set",
+				RUNTIME_VERSION_VARIABLE,
+				"--repo",
+				options.repo,
+				"--body",
+				currentVersion,
+			})
+		end
 	end
 
-	local encodedRoot = "storyRoot%3DPRStorybooks%2Fpr-" .. options.prNumber
-	print("Storybook ready: https://www.roblox.com/games/" .. options.placeId .. "?launchData=" .. encodedRoot)
+	print("Storybook ready: " .. storybookPreviewUrl(options.prNumber, options.placeId))
 end
 
 return deploy

@@ -1,15 +1,16 @@
 local cli = require("@batteries/cli")
 local process = require("@std/process")
 
-local cleanup = require("@root/cleanup")
+local pruneStorybookScript = require("@root/tasks/prune-storybook")
+local runTask = require("@root/runTask")
 
 local function help()
 	print([[
-deploy-storybook prune
+flipbook-cli prune
 Remove the storybook for a closed or merged pull request.
 
 USAGE:
-  deploy-storybook prune [options]
+  flipbook-cli prune [options]
 
 REQUIRED:
   --pr <number>              Pull request number
@@ -51,12 +52,10 @@ local function run(args: { string })
 
 	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
 
-	cleanup({
-		prNumber = prNumber,
-		universeId = universeId,
-		placeId = placeId,
-		apiKey = apiKey,
-	})
+	local globals = {
+		PR_NUMBER = prNumber,
+	}
+	runTask(pruneStorybookScript, globals, universeId, placeId, apiKey)
 end
 
 return { run = run }

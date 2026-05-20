@@ -21,11 +21,11 @@ end
 
 local function help()
 	print([[
-deploy-storybook
+flipbook-cli
 Deploy Flipbook storybooks to Roblox Open Cloud for pull request previews.
 
 USAGE:
-  deploy-storybook <command> [options]
+  flipbook-cli <command> [options]
 
 COMMANDS:
   deploy   Build and deploy a storybook for a pull request.
@@ -33,7 +33,7 @@ COMMANDS:
   comment  Post or update the storybook preview comment on a pull request.
   help     Show this help message.
 
-For more information about a command, run: deploy-storybook <command> --help
+For more information about a command, run: flipbook-cli <command> --help
 ]])
 end
 

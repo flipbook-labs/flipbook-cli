@@ -1,14 +1,10 @@
-local fs = require("@std/fs")
 local json = require("@std/json")
 local net = require("@std/net")
-local toml = require("@batteries/toml")
+
+local readWallyVersion = require("@root/readWallyVersion")
+local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 
 local PR_COMMENT_MARKER = "<!-- flipbook-pr-preview -->"
-
-local function readWallyVersion(): string
-	local manifest = toml.deserialize(fs.readFileToString("wally.toml")) :: any
-	return tostring(manifest.package.version)
-end
 
 export type CommentOptions = {
 	prNumber: number,
@@ -19,9 +15,7 @@ export type CommentOptions = {
 
 local function comment(options: CommentOptions)
 	local runtimeVersion = readWallyVersion()
-
-	local encodedRoot = "storyRoot%3DPRStorybooks%2Fpr-" .. options.prNumber
-	local prUrl = "https://www.roblox.com/games/" .. options.placeId .. "?launchData=" .. encodedRoot
+	local prUrl = storybookPreviewUrl(options.prNumber, options.placeId)
 	local allUrl = "https://www.roblox.com/games/" .. options.placeId
 	local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 	local body = PR_COMMENT_MARKER

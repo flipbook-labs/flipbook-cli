@@ -5,11 +5,11 @@ local deploy = require("@root/deploy")
 
 local function help()
 	print([[
-deploy-storybook deploy
+flipbook-cli deploy
 Build and deploy a storybook for a pull request.
 
 USAGE:
-  deploy-storybook deploy [options]
+  flipbook-cli deploy [options]
 
 REQUIRED:
   --pr <number>              Pull request number
@@ -24,7 +24,6 @@ ENV VARS (required):
 ENV VARS (optional):
   ROBLOX_STORYBOOK_UNIVERSE_ID  Fallback for --universe-id
   ROBLOX_STORYBOOK_PLACE_ID     Fallback for --place-id
-  ROBLOX_CREATOR_USER_ID     Roblox creator user ID (derived from universe if not set)
   GITHUB_TOKEN               GitHub token (enables runtime upgrade checks when set)
   GITHUB_REPOSITORY          GitHub repository, e.g. owner/repo (required with GITHUB_TOKEN)
 
@@ -63,7 +62,6 @@ local function run(args: { string })
 		universeId = universeId,
 		placeId = placeId,
 		apiKey = apiKey,
-		creatorUserId = process.env.ROBLOX_CREATOR_USER_ID,
 		githubToken = process.env.GITHUB_TOKEN,
 		repo = process.env.GITHUB_REPOSITORY,
 	})
