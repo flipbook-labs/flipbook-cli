@@ -1,5 +1,11 @@
 local dotenv = require("@pkg/dotenv@v0.1.0/src")
 
+local helpText = require("@self/helpText")
+
+local commentCommand = require("@self/commands/comment")
+local deployCommand = require("@self/commands/deploy")
+local yankCommand = require("@self/commands/yank")
+
 local function findSubcommand(args: { string }): string?
 	local i = 2
 	while i <= #args do
@@ -15,30 +21,26 @@ local function findSubcommand(args: { string }): string?
 	return nil
 end
 
+local availableCommands = {
+	deploy = deployCommand,
+	comment = commentCommand,
+	yank = yankCommand,
+}
+
 local function help()
-	print([[
-flipbook-cli
-Deploy Flipbook storybook experiences via Open Cloud.
-
-USAGE:
-  flipbook-cli <command> [options]
-
-COMMANDS:
-  deploy   Build and publish a storybook place
-  comment  Post or update a PR preview comment
-  yank     Publish an empty place to clear a PR preview
-  help     Show this help message
-
-For more information: flipbook-cli <command> --help
-]])
+	helpText.printRoot({
+		title = "flipbook-cli",
+		summary = "Deploy Flipbook storybook experiences via Open Cloud.",
+		commands = {
+			{ name = "deploy", description = deployCommand.description },
+			{ name = "comment", description = commentCommand.description },
+			{ name = "yank", description = yankCommand.description },
+			{ name = "help", description = "Show this help message" },
+		},
+	})
 end
 
-local availableCommands = {
-	deploy = require("@self/commands/deploy"),
-	yank = require("@self/commands/yank"),
-	comment = require("@self/commands/comment"),
-	help = { run = help },
-}
+availableCommands.help = { run = help }
 
 local function run(args: { string })
 	dotenv.config()
@@ -48,4 +50,6 @@ local function run(args: { string })
 	command.run(args)
 end
 
-return { run = run }
+return {
+	run = run,
+}

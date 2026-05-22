@@ -1,78 +1,66 @@
 local cli = require("@batteries/cli")
 local process = require("@std/process")
 
-local constants = require("@root/constants")
 local deploy = require("@root/deploy")
+local helpText = require("@root/cli/helpText")
 
-local function help()
-	print([[
-flipbook-cli deploy
-Build and publish a storybook place (Open Cloud).
+local DESCRIPTION = "Build and publish a storybook place"
 
-USAGE:
-  flipbook-cli deploy [options]
-
-OPTIONS:
-  --name <name>              Place name (default: main). Use pr-<number> for PR previews.
-  --stories <path>           Optional .rbxm (or directory) mounted as ReplicatedStorage.Stories
-  --universe-id <id>         Experience (universe) ID. Defaults to ROBLOX_STORYBOOK_UNIVERSE_ID if it exists.
-  --place-id <id>            Root place ID. Defaults to ROBLOX_STORYBOOK_PLACE_ID if it exists.
-  --flipbook-rbxm <path>     Prebuilt Flipbook.rbxm (skips GitHub download)
-  --dry-run <path>           Build .rbxl locally only (skip Open Cloud publish)
-  --help                     Show this help message
-
-ENV VARS (required for publish):
-  ROBLOX_API_KEY                  Roblox Open Cloud API key
-  ROBLOX_STORYBOOK_UNIVERSE_ID    Experience (universe) ID
-  ROBLOX_STORYBOOK_PLACE_ID       Root place ID (main deploy target; template for new PR places)
-
-OPTIONAL ENV VARS:
-  GITHUB_TOKEN                    Avoids GitHub API rate limits in CI
-]])
-end
+local HELP: helpText.HelpConfig = {
+	title = "deploy",
+	summary = "Build and publish a storybook place (Open Cloud).",
+	env = {
+		{
+			title = "ENV VARS (required for publish)",
+			vars = {
+				{ name = "ROBLOX_API_KEY", description = "Roblox API key", required = true },
+				{ name = "ROBLOX_STORYBOOK_UNIVERSE_ID", description = "Experience (universe) ID", required = true },
+				{
+					name = "ROBLOX_STORYBOOK_START_PLACE_ID",
+					description = "Root place ID (main deploy target; template for new PR places)",
+					required = true,
+				},
+			},
+		},
+	},
+}
 
 local function run(args: { string })
 	local parser = cli.parser()
 
 	parser:add("name", "option", {
-		help = "Place name",
-		default = constants.MAIN_PLACE_NAME,
+		help = "Place name. Use pr-<number> for PR previews.",
+		default = "main",
 	})
 	parser:add("stories", "option", {
-		help = "Stories .rbxm or directory",
-	})
-	parser:add("universe-id", "option", {
-		help = "Experience (universe) ID",
-		required = true,
-	})
-	parser:add("place-id", "option", {
-		help = "Root place ID",
+		help = "Optional .rbxm (or directory) mounted as ReplicatedStorage.Stories",
 	})
 	parser:add("flipbook-rbxm", "option", {
-		help = "Path to Flipbook.rbxm",
+		help = "Prebuilt Flipbook.rbxm (skips GitHub download)",
 	})
 	parser:add("dry-run", "option", {
-		help = "Output .rbxl path without publishing",
+		help = "Build .rbxl locally only (skip Open Cloud publish)",
 	})
 	parser:add("help", "flag", {
-		help = "Shows this help message",
+		help = "Show this help message",
 	})
 
 	parser:parse(args)
 
 	if parser:has("help") then
-		help()
+		helpText.print(parser, HELP)
 		process.exit(0)
 	end
 
 	deploy({
-		name = parser:get("name") or constants.MAIN_PLACE_NAME,
+		name = parser:get("name") or "main",
 		storiesPath = parser:get("stories"),
-		universeId = parser:get("universe-id"),
-		placeId = parser:get("place-id"),
 		flipbookRbxmPath = parser:get("flipbook-rbxm"),
 		dryRun = parser:get("dry-run"),
 	})
 end
 
-return { run = run }
+return {
+	run = run,
+	description = DESCRIPTION,
+}

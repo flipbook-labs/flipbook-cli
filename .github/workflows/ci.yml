@@ -16,17 +16,27 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install rokit tools
-        run: rokit install --no-trust-check
-
       - name: Install loom dependencies
         run: lute pkg install
 
       - name: Build flipbook-cli
         run: lute run build
 
-      - name: Verify binary
-        run: ./build/flipbook-cli --help || true
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: CompeyDev/setup-rokit@v0.2.1
+        with:
+          version: v1.2.0
+
+      - name: Install loom dependencies
+        run: lute pkg install
+
+      - name: Test
+        run: lute test
 
   analyze:
     runs-on: ubuntu-latest
@@ -37,9 +47,6 @@ jobs:
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
-
-      - name: Install rokit tools
-        run: rokit install --no-trust-check
 
       - name: Install loom dependencies
         run: lute pkg install

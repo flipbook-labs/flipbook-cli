@@ -2,48 +2,45 @@ local cli = require("@batteries/cli")
 local process = require("@std/process")
 
 local yank = require("@root/yank")
+local helpText = require("@root/cli/helpText")
 
-local function help()
-	print([[
-flipbook-cli yank
-Publish an empty place to clear a PR preview (Roblox places cannot be deleted).
+local DESCRIPTION = "Publish an empty place to clear a PR preview"
 
-USAGE:
-  flipbook-cli yank [options]
-
-OPTIONS:
-  --name <name>              Place name to clear (e.g. pr-42)
-  --universe-id <id>         Experience (universe) ID. Defaults to ROBLOX_STORYBOOK_UNIVERSE_ID if it exists.
-  --place-id <id>            Root place ID. Defaults to ROBLOX_STORYBOOK_PLACE_ID if it exists.
-  --help                     Show this help message
-
-ENV VARS:
-  ROBLOX_API_KEY                  Roblox API key (required)
-  ROBLOX_STORYBOOK_UNIVERSE_ID    Experience (universe) ID
-  ROBLOX_STORYBOOK_PLACE_ID Root place ID (Luau Execution host)
-]])
-end
+local HELP: helpText.HelpConfig = {
+	title = "yank",
+	summary = "Publish an empty place to clear a PR preview (Roblox places cannot be deleted).",
+	env = {
+		{
+			vars = {
+				{ name = "ROBLOX_API_KEY", description = "Roblox API key", required = true },
+				{ name = "ROBLOX_STORYBOOK_UNIVERSE_ID", description = "Experience (universe) ID" },
+				{ name = "ROBLOX_STORYBOOK_PLACE_ID", description = "Root place ID (Luau Execution host)" },
+			},
+		},
+	},
+}
 
 local function run(args: { string })
 	local parser = cli.parser()
 
 	parser:add("name", "option", {
-		help = "Place name",
+		help = "Place name to clear (e.g. pr-42)",
+		required = true,
 	})
 	parser:add("universe-id", "option", {
-		help = "Experience (universe) ID",
+		help = "Experience (universe) ID. Defaults to ROBLOX_STORYBOOK_UNIVERSE_ID if set.",
 	})
 	parser:add("place-id", "option", {
-		help = "Root place ID",
+		help = "Root place ID. Defaults to ROBLOX_STORYBOOK_PLACE_ID if set.",
 	})
 	parser:add("help", "flag", {
-		help = "Shows this help message",
+		help = "Show this help message",
 	})
 
 	parser:parse(args)
 
 	if parser:has("help") then
-		help()
+		helpText.print(parser, HELP)
 		process.exit(0)
 	end
 
@@ -57,4 +54,7 @@ local function run(args: { string })
 	})
 end
 
-return { run = run }
+return {
+	run = run,
+	description = DESCRIPTION,
+}
