@@ -1,9 +1,5 @@
 local dotenv = require("@pkg/dotenv@v0.1.0/src")
 
-local commands = require("@self/commands")
-
--- Scan args for the first positional value (skip --option <value> pairs and -flags).
--- Needed because lute prepends --universe-id and --place-id before the subcommand.
 local function findSubcommand(args: { string }): string?
 	local i = 2
 	while i <= #args do
@@ -22,25 +18,25 @@ end
 local function help()
 	print([[
 flipbook-cli
-Deploy Flipbook storybooks to Roblox Open Cloud for pull request previews.
+Deploy Flipbook storybook experiences via Open Cloud.
 
 USAGE:
   flipbook-cli <command> [options]
 
 COMMANDS:
-  deploy   Build and deploy a storybook for a pull request.
-  prune    Remove the storybook for a closed or merged pull request.
-  comment  Post or update the storybook preview comment on a pull request.
-  help     Show this help message.
+  deploy   Build and publish a storybook place
+  comment  Post or update a PR preview comment
+  yank     Publish an empty place to clear a PR preview
+  help     Show this help message
 
-For more information about a command, run: flipbook-cli <command> --help
+For more information: flipbook-cli <command> --help
 ]])
 end
 
 local availableCommands = {
-	deploy = commands.deploy,
-	prune = commands.prune,
-	comment = commands.comment,
+	deploy = require("@self/commands/deploy"),
+	yank = require("@self/commands/yank"),
+	comment = require("@self/commands/comment"),
 	help = { run = help },
 }
 
