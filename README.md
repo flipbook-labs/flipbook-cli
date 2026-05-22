@@ -72,6 +72,5 @@ flipbook-cli yank --name pr-42
 | `ROBLOX_API_KEY`               | Required for publish / Luau Execution                        |
 | `ROBLOX_STORYBOOK_UNIVERSE_ID` | Experience ID                                                |
 | `ROBLOX_STORYBOOK_PLACE_ID`    | Main place; Luau Execution host; `CreatePlaceAsync` template |
-| `ROBLOX_STORYBOOK_PLACE_ID`    | Alias for `ROBLOX_STORYBOOK_PLACE_ID`                        |
 | `GITHUB_TOKEN`                 | Optional; GitHub API auth for release fetch and `comment`    |
 | `GITHUB_REPOSITORY`            | For `comment`                                                |
