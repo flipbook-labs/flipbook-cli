@@ -13,8 +13,8 @@ USAGE:
 
 OPTIONS:
   --name <name>              Place name to clear (e.g. pr-42)
-  --universe-id <id>         Experience (universe) ID. Overrides ROBLOX_STORYBOOK_UNIVERSE_ID.
-  --place-id <id>            Root place ID. Overrides ROBLOX_STORYBOOK_PLACE_ID / ROBLOX_STORYBOOK_PLACE_ID.
+  --universe-id <id>         Experience (universe) ID. Defaults to ROBLOX_STORYBOOK_UNIVERSE_ID if it exists.
+  --place-id <id>            Root place ID. Defaults to ROBLOX_STORYBOOK_PLACE_ID if it exists.
   --help                     Show this help message
 
 ENV VARS:
@@ -27,10 +27,18 @@ end
 local function run(args: { string })
 	local parser = cli.parser()
 
-	parser:add("name", "option", { help = "Place name" })
-	parser:add("universe-id", "option", { help = "Experience (universe) ID" })
-	parser:add("place-id", "option", { help = "Root place ID" })
-	parser:add("help", "flag")
+	parser:add("name", "option", {
+		help = "Place name",
+	})
+	parser:add("universe-id", "option", {
+		help = "Experience (universe) ID",
+	})
+	parser:add("place-id", "option", {
+		help = "Root place ID",
+	})
+	parser:add("help", "flag", {
+		help = "Shows this help message",
+	})
 
 	parser:parse(args)
 
@@ -45,7 +53,7 @@ local function run(args: { string })
 	yank({
 		name = name,
 		universeId = parser:get("universe-id"),
-		startPlaceId = parser:get("place-id"),
+		placeId = parser:get("place-id"),
 	})
 end
 

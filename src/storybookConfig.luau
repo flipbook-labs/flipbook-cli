@@ -20,7 +20,7 @@ local function loadStorybookConfig(overrides: StorybookConfigOverrides?): Storyb
 		),
 		placeId = resolvedOverrides.placeId or assert(
 			process.env.ROBLOX_STORYBOOK_PLACE_ID,
-			"ROBLOX_STORYBOOK_PLACE_ID (or ROBLOX_STORYBOOK_PLACE_ID) is required (or pass --place-id)"
+			"ROBLOX_STORYBOOK_PLACE_ID is required (or pass --place-id)"
 		),
 	}
 end
