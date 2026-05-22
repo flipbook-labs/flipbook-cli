@@ -3,6 +3,7 @@ local process = require("@std/process")
 
 local constants = require("@root/constants")
 local deploy = require("@root/deploy")
+local resolveRobloxApiKey = require("@root/resolveRobloxApiKey")
 
 local function help()
 	print([[
@@ -15,41 +16,38 @@ USAGE:
 OPTIONS:
   --name <name>              Place name (default: main). Use pr-<number> for PR previews.
   --stories <path>           Optional .rbxm (or directory) mounted as ReplicatedStorage.Stories
-  --universe-id <id>         Experience (universe) ID. Defaults to ROBLOX_STORYBOOK_UNIVERSE_ID if it exists.
-  --place-id <id>            Root place ID. Defaults to ROBLOX_STORYBOOK_PLACE_ID if it exists.
+  --universe-id <id>         Universe ID of the experience to publish to
+  --place-id <id>            Root place ID (required for publish)
+  --api-key, -k <key>        Roblox Open Cloud API key (default: ROBLOX_API_KEY)
   --flipbook-rbxm <path>     Prebuilt Flipbook.rbxm (skips GitHub download)
   --dry-run <path>           Build .rbxl locally only (skip Open Cloud publish)
   --help                     Show this help message
 
-ENV VARS (required for publish):
-  ROBLOX_API_KEY                  Roblox Open Cloud API key
-  ROBLOX_STORYBOOK_UNIVERSE_ID    Experience (universe) ID
-  ROBLOX_STORYBOOK_PLACE_ID       Root place ID (main deploy target; template for new PR places)
+ENV VARS:
+  ROBLOX_API_KEY             Roblox Open Cloud API key (when --api-key is not passed)
 
 OPTIONAL ENV VARS:
-  GITHUB_TOKEN                    Avoids GitHub API rate limits in CI
+  GITHUB_TOKEN               Avoids GitHub API rate limits when downloading Flipbook.rbxm
 ]])
 end
 
 local function run(args: { string })
 	local parser = cli.parser()
 
-	parser:add("name", "option", {
-		help = "Place name",
-		default = constants.MAIN_PLACE_NAME,
-	})
 	parser:add("stories", "option", {
 		help = "Stories .rbxm or directory",
+		required = true,
 	})
 	parser:add("universe-id", "option", {
-		help = "Experience (universe) ID",
+		help = "Universe ID of the experience to publish to",
 		required = true,
 	})
 	parser:add("place-id", "option", {
 		help = "Root place ID",
 	})
-	parser:add("flipbook-rbxm", "option", {
-		help = "Path to Flipbook.rbxm",
+	parser:add("api-key", "option", {
+		aliases = { "k" },
+		help = "Roblox Open Cloud API key (default: ROBLOX_API_KEY)",
 	})
 	parser:add("dry-run", "option", {
 		help = "Output .rbxl path without publishing",
@@ -65,13 +63,25 @@ local function run(args: { string })
 		process.exit(0)
 	end
 
+	local dryRun = parser:get("dry-run")
+	local universeId = parser:get("universe-id")
+	local placeId = parser:get("place-id")
+	local apiKey: string? = nil
+
+	if not dryRun then
+		assert(universeId, "--universe-id is required")
+		assert(placeId, "--place-id is required")
+		apiKey = resolveRobloxApiKey(parser:get("api-key"))
+	end
+
 	deploy({
 		name = parser:get("name") or constants.MAIN_PLACE_NAME,
 		storiesPath = parser:get("stories"),
-		universeId = parser:get("universe-id"),
-		placeId = parser:get("place-id"),
+		universeId = universeId,
+		placeId = placeId,
+		apiKey = apiKey,
 		flipbookRbxmPath = parser:get("flipbook-rbxm"),
-		dryRun = parser:get("dry-run"),
+		dryRun = dryRun,
 	})
 end
 

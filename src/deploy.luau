@@ -1,5 +1,4 @@
 local path = require("@std/path")
-local process = require("@std/process")
 local system = require("@std/system")
 
 local buildPlace = require("@root/buildPlace")
@@ -15,6 +14,7 @@ export type DeployOptions = {
 	flipbookRbxmPath: string?,
 	universeId: string?,
 	placeId: string?,
+	apiKey: string?,
 	dryRun: string?,
 }
 
@@ -42,7 +42,7 @@ local function deploy(options: DeployOptions)
 		return
 	end
 
-	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
+	local apiKey = assert(options.apiKey, "API key is required")
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
 		placeId = options.placeId,
