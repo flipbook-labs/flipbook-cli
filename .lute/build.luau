@@ -1,6 +1,7 @@
 local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
+local project = require("@repo/project")
 
 local storeDir = path.join(process.homedir(), ".loom/store")
 local packagesDir = path.resolve("packages")
@@ -9,7 +10,7 @@ if not fs.exists(packagesDir) then
 	fs.createDirectory(packagesDir)
 end
 
-local lock = require("../loom.lock")
+local lock = require("@repo/loom.lock")
 
 process.run({
 	"lute",
@@ -19,6 +20,8 @@ process.run({
 	stdio = "inherit",
 })
 
+-- Lute doesn't seem able to bundle `~/.loom/store` yet, so we need to copy the
+-- packages into our project directory to allow them to be part of the bundle.
 for packageId in lock.packages do
 	local src = path.join(storeDir, packageId)
 	local dst = path.join(packagesDir, packageId)
@@ -27,8 +30,12 @@ for packageId in lock.packages do
 	end
 end
 
-if not fs.exists("build") then
-	fs.createDirectory("build")
+if fs.exists(project.BUILD_OUTPUT) then
+	fs.remove(project.BUILD_OUTPUT)
+end
+
+if not fs.exists(project.BUILD_PATH) then
+	fs.createDirectory(project.BUILD_PATH, { makeParents = true })
 end
 
 process.run({
@@ -36,7 +43,7 @@ process.run({
 	"compile",
 	"cli.luau",
 	"--output",
-	"build/flipbook-cli",
+	tostring(project.BUILD_OUTPUT),
 	"--bundle-stats",
 	"--show-require-graph",
 }, {
