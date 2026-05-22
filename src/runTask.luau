@@ -1,5 +1,6 @@
 local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local fs = require("@std/fs")
+local json = require("@std/json")
 local path = require("@std/path")
 local system = require("@std/system")
 
@@ -13,32 +14,44 @@ local function runTask(
 	universeId: string,
 	placeId: string,
 	apiKey: string
-)
+): any
 	local parts = {}
 	for key, value in globals do
 		table.insert(parts, key .. "=" .. tostring(value))
 	end
 
-	local scriptPath = tostring(path.join(tostring(system.tmpdir()), "flipbook-task-" .. os.time() .. ".luau"))
+	local scriptPath = tostring(path.join(system.tmpdir(), `flipbook-task-{os.time()}.luau`))
 	fs.writeStringToFile(scriptPath, script)
 
-	local ok, err = pcall(run, config.rocaleCmd, {
-		"run",
-		"--script",
-		scriptPath,
-		"--universeId",
-		universeId,
-		"--placeId",
-		placeId,
-		"--lua.globals",
-		table.concat(parts, ","),
-	}, { env = { ROBLOX_API_KEY = apiKey } })
+	local output
+	local ok, err = pcall(function()
+		output = run(config.rocaleCmd, {
+			"run",
+			"--script",
+			scriptPath,
+			"--universeId",
+			universeId,
+			"--placeId",
+			placeId,
+			"--lua.globals",
+			table.concat(parts, ","),
+		}, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
+	end)
 
 	fs.remove(scriptPath)
 
 	if not ok then
 		error(err, 0)
 	end
+
+	if output and output ~= "" then
+		local parseOk, result = pcall(json.deserialize, output)
+		if parseOk then
+			return result
+		end
+	end
+
+	return nil
 end
 
 return runTask
