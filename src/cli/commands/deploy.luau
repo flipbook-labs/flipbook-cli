@@ -1,8 +1,15 @@
 local cli = require("@batteries/cli")
+local fs = require("@std/fs")
+local path = require("@std/path")
 local process = require("@std/process")
+local system = require("@std/system")
 
-local deploy = require("@root/deploy")
-local helpText = require("@root/cli/helpText")
+local fetchFlipbookRbxm = require("@root/fetchFlipbookRbxm")
+local getTempDir = require("@root/getTempDir")
+local publishPlace = require("@root/publishPlace")
+local resolvePlaceId = require("@root/resolvePlaceId")
+local rojoBuild = require("@root/rojoBuild")
+local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
 local title = "deploy"
@@ -10,14 +17,12 @@ local summary = "Deploy an rbxm file containing your storybooks and stories to a
 
 local parser = cli.parser()
 
-parser:add("name", "option", {
+parser:add("place-name", "option", {
 	help = "Name of the place to update or create for this deployment.",
 	required = true,
 })
 parser:add("api-key", "option", {
 	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
-	default = process.env.ROBLOX_API_KEY,
-	required = true,
 })
 parser:add("universe-id", "option", {
 	help = "Universe to deploy to.",
@@ -34,20 +39,71 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
+export type DeployOptions = {
+	placeName: string,
+	apiKey: string,
+	storiesPath: path.Pathlike,
+	universeId: string,
+
+	placeId: string?,
+	dryRun: string?,
+}
+
 local function run(args: { string })
 	parser:parse(args)
 
-	if parser:has("help") then
-		helpText.print(parser, { title = title, summary = summary })
-		process.exit(0)
+	local apiKey = assert(
+		parser:get("api-key") or process.env.ROBLOX_API_KEY,
+		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
+	)
+
+	local placeName = parser:get("place-name") :: string
+
+	local universeIdStr = parser:get("universe-id")
+	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
+
+	local storiesPath = parser:get("stories") :: string
+	assert(
+		fs.exists(storiesPath) and fs.type(storiesPath) == "file",
+		`--stories needs to be an rbxm file: {storiesPath}`
+	)
+
+	local dryRun = parser:get("dry-run")
+	local placeId = parser:get("place-id")
+
+	local flipbookRbxmPath = fetchFlipbookRbxm()
+
+	local outputRbxlPath = rojoBuild({
+		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
+		project = {
+			name = placeName,
+			emitLegacyScripts = false,
+			tree = {
+				["$className"] = "DataModel",
+				ReplicatedStorage = {
+					Flipbook = {
+						["$path"] = flipbookRbxmPath,
+					},
+					Stories = {
+						["$path"] = storiesPath,
+					},
+				},
+			},
+		},
+	})
+
+	if dryRun then
+		return
 	end
 
-	deploy({
-		name = parser:get("name") or "main",
-		storiesPath = parser:get("stories"),
-		dryRun = parser:get("dry-run"),
-		apiKey = parser:get("api-key"),
+	local allocatedPlaceId, created = resolvePlaceId(placeName, apiKey, {
+		universeId = universeId,
+		placeId = placeId,
 	})
+	publishPlace(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
+
+	print(`Published storybook "{placeName}" to place {allocatedPlaceId} (created={created})`)
+	print("Play: " .. storybookPreviewUrl(allocatedPlaceId))
 end
 
 local command: types.Command = {

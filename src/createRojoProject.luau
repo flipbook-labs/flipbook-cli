@@ -8,7 +8,7 @@ export type RojoProjectContent = {
 	tree: { [string]: any },
 }
 
-local function createRojoProject(projectPath: string, projectContent: RojoProjectContent): string
+local function createRojoProject(projectPath: path.Pathlike, projectContent: RojoProjectContent): string
 	local resolvedProjectPath = tostring(path.resolve(projectPath))
 	fs.writeStringToFile(resolvedProjectPath, json.serialize(projectContent :: json.Object, true))
 	return resolvedProjectPath

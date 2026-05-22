@@ -1,21 +1,12 @@
-local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local fs = require("@std/fs")
 local json = require("@std/json")
 local net = require("@std/net")
+local path = require("@std/path")
 local process = require("@std/process")
+local system = require("@std/system")
 
-local config = require("@root/config")
-local constants = require("@root/constants")
-local ensureStateDir = require("@root/ensureStateDir")
-
-local run = FlipbookBatteries.run
-
-local function releaseApiUrl(repo: string, tag: string?): string
-	if tag then
-		return `https://api.github.com/repos/{repo}/releases/tags/{tag}`
-	end
-	return `https://api.github.com/repos/{repo}/releases/latest`
-end
+local GITHUB_REPO = "flipbook-labs/flipbook"
+local RBXM_ASSET_NAME = "Flipbook.rbxm"
 
 local function githubHeaders(): { [string]: string }
 	local headers: { [string]: string } = {
@@ -29,11 +20,9 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function fetchRelease(
-	repo: string,
-	tag: string?
-): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
-	local response = net.request(releaseApiUrl(repo, tag), {
+local function fetchRelease(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+	local url = `https://api.github.com/repos/{GITHUB_REPO}/releases/latest`
+	local response = net.request(url, {
 		method = "GET",
 		headers = githubHeaders(),
 	})
@@ -45,51 +34,34 @@ local function fetchRelease(
 	return json.deserialize(response.body) :: any
 end
 
-local function findAssetDownloadUrl(release: any, rbxmAssetName: string): string
+local function findAssetDownloadUrl(release: any): string
 	for _, asset in release.assets do
-		if asset.name == rbxmAssetName then
+		if asset.name == RBXM_ASSET_NAME then
 			return asset.browser_download_url
 		end
 	end
-	error(`release {release.tag_name} has no asset named "{rbxmAssetName}"`)
-end
-
-local function readCachedReleaseTag(): string?
-	if not fs.exists(constants.FLIPBOOK_RELEASE_META) then
-		return nil
-	end
-	local meta = json.deserialize(fs.readFileToString(constants.FLIPBOOK_RELEASE_META)) :: { tag_name: string? }
-	return meta.tag_name
-end
-
-local function writeCachedReleaseTag(tagName: string)
-	ensureStateDir()
-	fs.writeStringToFile(constants.FLIPBOOK_RELEASE_META, json.serialize({ tag_name = tagName }, true))
+	error(`release {release.tag_name} has no asset named "{RBXM_ASSET_NAME}"`)
 end
 
 local function fetchFlipbookRbxm(): string
-	local cachedTag = readCachedReleaseTag()
-	if fs.exists(constants.FLIPBOOK_RBXM_CACHE) and cachedTag then
-		print(`Using cached {constants.FLIPBOOK_RBXM_ASSET} ({cachedTag})`)
-		return constants.FLIPBOOK_RBXM_CACHE
+	local release = fetchRelease()
+	local downloadUrl = findAssetDownloadUrl(release)
+
+	print(`Downloading {RBXM_ASSET_NAME} from {GITHUB_REPO} release {release.tag_name}...`)
+
+	local response = net.request(downloadUrl, {
+		method = "GET",
+		headers = githubHeaders(),
+	})
+
+	if response.status >= 400 then
+		error(`failed to download {RBXM_ASSET_NAME} ({response.status})`)
 	end
 
-	local release = fetchRelease(constants.FLIPBOOK_GITHUB_REPO)
-	local tagName = release.tag_name
+	local flipbookRbxmPath = tostring(path.join(system.tmpdir(), "Flipbook.rbxm"))
+	fs.writeStringToFile(flipbookRbxmPath, response.body)
 
-	if fs.exists(constants.FLIPBOOK_RBXM_CACHE) and cachedTag == tagName then
-		print(`Using cached {constants.FLIPBOOK_RBXM_ASSET} ({tagName})`)
-		return constants.FLIPBOOK_RBXM_CACHE
-	end
-
-	local downloadUrl = findAssetDownloadUrl(release, constants.FLIPBOOK_RBXM_ASSET)
-	print(`Downloading {constants.FLIPBOOK_RBXM_ASSET} from {constants.FLIPBOOK_GITHUB_REPO} release {tagName}...`)
-	ensureStateDir()
-	run(config.curlCmd, { "-fsSL", downloadUrl, "-o", constants.FLIPBOOK_RBXM_CACHE })
-	writeCachedReleaseTag(tagName)
-	print(`Cached {constants.FLIPBOOK_RBXM_ASSET} at {constants.FLIPBOOK_RBXM_CACHE}`)
-
-	return constants.FLIPBOOK_RBXM_CACHE
+	return flipbookRbxmPath
 end
 
 return fetchFlipbookRbxm

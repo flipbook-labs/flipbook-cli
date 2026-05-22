@@ -10,9 +10,9 @@ local run = FlipbookBatteries.run
 
 local function runTask(
 	script: string,
-	globals: { [string]: string | number },
-	universeId: string,
-	placeId: string,
+	globals: { [string]: string | number | boolean },
+	universeId: number,
+	placeId: number,
 	apiKey: string
 ): any
 	local parts = {}
