@@ -23,11 +23,6 @@ local function resolveFlipbookRbxmPath(explicitPath: string?): string
 		return tostring(path.resolve(explicitPath))
 	end
 
-	local fromEnv = process.env.FLIPBOOK_RBXM_PATH
-	if fromEnv then
-		return tostring(path.resolve(fromEnv))
-	end
-
 	return fetchFlipbookRbxm()
 end
 

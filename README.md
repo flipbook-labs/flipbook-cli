@@ -73,9 +73,5 @@ flipbook-cli yank --name pr-42
 | `ROBLOX_STORYBOOK_UNIVERSE_ID` | Experience ID                                                |
 | `ROBLOX_STORYBOOK_PLACE_ID`    | Main place; Luau Execution host; `CreatePlaceAsync` template |
 | `ROBLOX_STORYBOOK_PLACE_ID`    | Alias for `ROBLOX_STORYBOOK_PLACE_ID`                        |
-| `FLIPBOOK_GITHUB_REPO`         | GitHub repo for releases (default: `flipbook-labs/flipbook`) |
-| `FLIPBOOK_RELEASE_TAG`         | Pin a specific release tag (default: latest)                 |
-| `FLIPBOOK_RBXM_ASSET`          | Release asset filename (default: `Flipbook.rbxm`)            |
-| `FLIPBOOK_RBXM_PATH`           | Local `Flipbook.rbxm` (skips download)                       |
 | `GITHUB_TOKEN`                 | Optional; GitHub API auth for release fetch and `comment`    |
 | `GITHUB_REPOSITORY`            | For `comment`                                                |

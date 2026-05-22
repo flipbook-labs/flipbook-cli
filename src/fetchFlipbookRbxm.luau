@@ -13,14 +13,6 @@ local run = FlipbookBatteries.run
 local DEFAULT_REPO = "flipbook-labs/flipbook"
 local DEFAULT_ASSET_NAME = "Flipbook.rbxm"
 
-local function githubRepo(): string
-	return process.env.FLIPBOOK_GITHUB_REPO or DEFAULT_REPO
-end
-
-local function assetName(): string
-	return process.env.FLIPBOOK_RBXM_ASSET or DEFAULT_ASSET_NAME
-end
-
 local function releaseApiUrl(repo: string, tag: string?): string
 	if tag then
 		return `https://api.github.com/repos/{repo}/releases/tags/{tag}`
@@ -76,18 +68,17 @@ local function writeCachedReleaseTag(tagName: string)
 end
 
 local function fetchFlipbookRbxm(): string
-	local repo = githubRepo()
-	local rbxmAssetName = assetName()
-	local pinnedTag = process.env.FLIPBOOK_RELEASE_TAG
+	local repo = DEFAULT_REPO
+	local rbxmAssetName = DEFAULT_ASSET_NAME
 	local cachePath = constants.FLIPBOOK_RBXM_CACHE
 
 	local cachedTag = readCachedReleaseTag()
-	if fs.exists(cachePath) and cachedTag and (pinnedTag == nil or pinnedTag == cachedTag) then
+	if fs.exists(cachePath) and cachedTag then
 		print(`Using cached {rbxmAssetName} ({cachedTag})`)
 		return cachePath
 	end
 
-	local release = fetchRelease(repo, pinnedTag)
+	local release = fetchRelease(repo)
 	local tagName = release.tag_name
 
 	if fs.exists(cachePath) and cachedTag == tagName then

@@ -25,12 +25,8 @@ ENV VARS (required for publish):
   ROBLOX_STORYBOOK_UNIVERSE_ID    Experience (universe) ID
   ROBLOX_STORYBOOK_PLACE_ID Root place ID (main deploy target; template for new PR places)
 
-ENV VARS (Flipbook.rbxm):
-  FLIPBOOK_GITHUB_REPO            GitHub repo (default: flipbook-labs/flipbook)
-  FLIPBOOK_RELEASE_TAG            Pin a release tag (default: latest)
-  FLIPBOOK_RBXM_ASSET             Release asset name (default: Flipbook.rbxm)
-  FLIPBOOK_RBXM_PATH              Local Flipbook.rbxm (skips download)
-  GITHUB_TOKEN                    Optional; avoids GitHub API rate limits in CI
+OPTIONAL ENV VARS:
+  GITHUB_TOKEN                    Avoids GitHub API rate limits in CI
 
 NOTES:
   --name main publishes to the experience start place.
