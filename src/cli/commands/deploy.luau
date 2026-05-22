@@ -3,67 +3,58 @@ local process = require("@std/process")
 
 local deploy = require("@root/deploy")
 local helpText = require("@root/cli/helpText")
+local types = require("@root/cli/types")
 
-local help: helpText.HelpConfig = {
-	title = "deploy",
-	summary = "Deploy an rbxm file containing your storybooks and stories to an experience for previewing.",
-	env = {
-		{
-			title = "ENV VARS (required for publish)",
-			vars = {
-				{
-					name = "ROBLOX_API_KEY",
-					description = "Roblox API key",
-				},
-				{
-					name = "ROBLOX_STORYBOOK_UNIVERSE_ID",
-					description = "Experience (universe) ID",
-				},
-				{
-					name = "ROBLOX_STORYBOOK_START_PLACE_ID",
-					description = "Root place ID (main deploy target; template for new PR places)",
-				},
-			},
-		},
-	},
-}
+local title = "deploy"
+local summary = "Deploy an rbxm file containing your storybooks and stories to an experience for previewing."
+
+local parser = cli.parser()
+
+parser:add("name", "option", {
+	help = "Name of the place to update or create for this deployment.",
+	required = true,
+})
+parser:add("api-key", "option", {
+	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
+	default = process.env.ROBLOX_API_KEY,
+	required = true,
+})
+parser:add("universe-id", "option", {
+	help = "Universe to deploy to.",
+	required = true,
+})
+parser:add("stories", "option", {
+	help = "Path to an rbxm file containing storybooks and stories.",
+	required = true,
+})
+parser:add("dry-run", "option", {
+	help = "Skip any steps that would make changes to the live Roblox experience.",
+})
+parser:add("help", "flag", {
+	help = "Show this help message",
+})
 
 local function run(args: { string })
-	local parser = cli.parser()
-
-	parser:add("name", "option", {
-		help = "Place name. Use pr-<number> for PR previews.",
-		default = "main",
-	})
-	parser:add("stories", "option", {
-		help = "Optional .rbxm (or directory) mounted as ReplicatedStorage.Stories",
-	})
-	parser:add("flipbook-rbxm", "option", {
-		help = "Prebuilt Flipbook.rbxm (skips GitHub download)",
-	})
-	parser:add("dry-run", "option", {
-		help = "Build .rbxl locally only (skip Open Cloud publish)",
-	})
-	parser:add("help", "flag", {
-		help = "Show this help message",
-	})
-
 	parser:parse(args)
 
 	if parser:has("help") then
-		helpText.print(parser, help)
+		helpText.print(parser, { title = title, summary = summary })
 		process.exit(0)
 	end
 
 	deploy({
 		name = parser:get("name") or "main",
 		storiesPath = parser:get("stories"),
-		flipbookRbxmPath = parser:get("flipbook-rbxm"),
 		dryRun = parser:get("dry-run"),
+		apiKey = parser:get("api-key"),
 	})
 end
 
-return {
+local command: types.Command = {
 	run = run,
-	help = help,
+	title = title,
+	summary = summary,
+	parser = parser,
 }
+
+return command

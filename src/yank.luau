@@ -10,6 +10,7 @@ local resolvePlaceId = require("@root/resolvePlaceId")
 
 export type YankOptions = {
 	name: string,
+	apiKey: string,
 	universeId: string?,
 	placeId: string?,
 }
@@ -17,7 +18,7 @@ export type YankOptions = {
 local function yank(options: YankOptions)
 	assert(not isMainDeploy(options.name), 'cannot yank the "main" place')
 
-	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
+	local apiKey = options.apiKey
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
 		placeId = options.placeId,

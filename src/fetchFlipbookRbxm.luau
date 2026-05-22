@@ -29,7 +29,10 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function fetchRelease(repo: string, tag: string?): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+local function fetchRelease(
+	repo: string,
+	tag: string?
+): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
 	local response = net.request(releaseApiUrl(repo, tag), {
 		method = "GET",
 		headers = githubHeaders(),
@@ -65,32 +68,28 @@ local function writeCachedReleaseTag(tagName: string)
 end
 
 local function fetchFlipbookRbxm(): string
-	local repo = constants.FLIPBOOK_GITHUB_REPO
-	local rbxmAssetName = constants.FLIPBOOK_RBXM_ASSET
-	local cachePath = constants.FLIPBOOK_RBXM_CACHE
-
 	local cachedTag = readCachedReleaseTag()
-	if fs.exists(cachePath) and cachedTag then
-		print(`Using cached {rbxmAssetName} ({cachedTag})`)
-		return cachePath
+	if fs.exists(constants.FLIPBOOK_RBXM_CACHE) and cachedTag then
+		print(`Using cached {constants.FLIPBOOK_RBXM_ASSET} ({cachedTag})`)
+		return constants.FLIPBOOK_RBXM_CACHE
 	end
 
-	local release = fetchRelease(repo)
+	local release = fetchRelease(constants.FLIPBOOK_GITHUB_REPO)
 	local tagName = release.tag_name
 
-	if fs.exists(cachePath) and cachedTag == tagName then
-		print(`Using cached {rbxmAssetName} ({tagName})`)
-		return cachePath
+	if fs.exists(constants.FLIPBOOK_RBXM_CACHE) and cachedTag == tagName then
+		print(`Using cached {constants.FLIPBOOK_RBXM_ASSET} ({tagName})`)
+		return constants.FLIPBOOK_RBXM_CACHE
 	end
 
-	local downloadUrl = findAssetDownloadUrl(release, rbxmAssetName)
-	print(`Downloading {rbxmAssetName} from {repo} release {tagName}...`)
+	local downloadUrl = findAssetDownloadUrl(release, constants.FLIPBOOK_RBXM_ASSET)
+	print(`Downloading {constants.FLIPBOOK_RBXM_ASSET} from {constants.FLIPBOOK_GITHUB_REPO} release {tagName}...`)
 	ensureStateDir()
-	run(config.curlCmd, { "-fsSL", downloadUrl, "-o", cachePath })
+	run(config.curlCmd, { "-fsSL", downloadUrl, "-o", constants.FLIPBOOK_RBXM_CACHE })
 	writeCachedReleaseTag(tagName)
-	print(`Cached {rbxmAssetName} at {cachePath}`)
+	print(`Cached {constants.FLIPBOOK_RBXM_ASSET} at {constants.FLIPBOOK_RBXM_CACHE}`)
 
-	return cachePath
+	return constants.FLIPBOOK_RBXM_CACHE
 end
 
 return fetchFlipbookRbxm

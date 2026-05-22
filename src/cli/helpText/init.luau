@@ -5,29 +5,9 @@ local root = require("@self/root")
 
 local PROGRAM_NAME = "flipbook-cli"
 
-export type EnvVar = {
-	name: string,
-	description: string,
-	required: boolean?,
-}
-
-export type EnvGroup = {
-	title: string?,
-	vars: { EnvVar },
-}
-
-export type HelpSection = {
-	heading: string,
-	lines: { string },
-}
-
 export type HelpConfig = {
 	title: string,
 	summary: string?,
-	usage: string?,
-	env: { EnvGroup }?,
-	sections: { HelpSection }?,
-	skipFlags: { string }?,
 }
 
 type ArgData = {
@@ -45,13 +25,9 @@ type ArgData = {
 local function collectArgLines(parser: cli.Parser, config: HelpConfig): ({ string }, { string })
 	local requiredLines: { string } = {}
 	local optionLines: { string } = {}
-	local skipFlags = config.skipFlags
 
 	for _, argument in parser.arguments :: { ArgData } do
 		if argument.options.hidden then
-			continue
-		end
-		if format.shouldSkip(argument.name, skipFlags) then
 			continue
 		end
 		if argument.kind == "positional" or argument.kind == "variadic" then
@@ -69,19 +45,6 @@ local function collectArgLines(parser: cli.Parser, config: HelpConfig): ({ strin
 	return requiredLines, optionLines
 end
 
-local function appendEnvGroups(lines: { string }, envGroups: { EnvGroup })
-	for _, group in envGroups do
-		local heading = group.title or "ENV VARS"
-		local envLines: { string } = {}
-		for _, envVar in group.vars do
-			local padding = math.max(1, 32 - #envVar.name)
-			local suffix = if envVar.required then " (required)" else ""
-			table.insert(envLines, `  {envVar.name}{string.rep(" ", padding)}{envVar.description}{suffix}`)
-		end
-		format.appendSection(lines, heading, envLines)
-	end
-end
-
 local function build(parser: cli.Parser, config: HelpConfig): string
 	local title = `{PROGRAM_NAME} {config.title}`
 	local lines: { string } = { title }
@@ -92,7 +55,7 @@ local function build(parser: cli.Parser, config: HelpConfig): string
 
 	table.insert(lines, "")
 	table.insert(lines, "USAGE:")
-	table.insert(lines, `  {config.usage or parser:usage(title)}`)
+	table.insert(lines, `  {parser:usage(title)}`)
 	table.insert(lines, "")
 
 	local requiredLines, optionLines = collectArgLines(parser, config)
@@ -103,16 +66,6 @@ local function build(parser: cli.Parser, config: HelpConfig): string
 
 	if #optionLines > 0 then
 		format.appendSection(lines, "OPTIONS", optionLines)
-	end
-
-	if config.env then
-		appendEnvGroups(lines, config.env)
-	end
-
-	if config.sections then
-		for _, section in config.sections do
-			format.appendSection(lines, section.heading, section.lines)
-		end
 	end
 
 	-- Trim trailing blank line from last appendSection

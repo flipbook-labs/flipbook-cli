@@ -3,62 +3,58 @@ local process = require("@std/process")
 
 local comment = require("@root/comment")
 local helpText = require("@root/cli/helpText")
+local types = require("@root/cli/types")
 
-local help: helpText.HelpConfig = {
-	title = "comment",
-	summary = "Post or update the storybook preview comment on a pull request.",
-	env = {
-		{
-			vars = {
-				{
-					name = "GITHUB_TOKEN",
-					description = "GitHub token",
-				},
-				{
-					name = "GITHUB_REPOSITORY",
-					description = "owner/repo",
-				},
-			},
-		},
-	},
-}
+local title = "comment"
+local summary = "Post or update the storybook preview comment on a pull request."
+
+local parser = cli.parser()
+
+parser:add("pr", "option", {
+	help = "Pull request number",
+	required = true,
+})
+parser:add("github-token", "option", {
+	help = "GitHub token (Can also be supplied by the GITHUB_TOKEN env var)",
+	default = process.env.GITHUB_TOKEN,
+	required = true,
+})
+parser:add("github-repository", "option", {
+	help = "owner/repo (Can also be supplied by the GITHUB_REPOSITORY env var)",
+	default = process.env.GITHUB_REPOSITORY,
+	required = true,
+})
+parser:add("name", "option", {
+	help = "Deploy name",
+})
+parser:add("help", "flag", {
+	help = "Show this help message",
+})
 
 local function run(args: { string })
-	local parser = cli.parser()
-
-	parser:add("pr", "option", {
-		help = "Pull request number",
-		required = true,
-	})
-	parser:add("name", "option", {
-		help = "Deploy name",
-	})
-	parser:add("help", "flag", {
-		help = "Show this help message",
-	})
-
 	parser:parse(args)
 
 	if parser:has("help") then
-		helpText.print(parser, help)
+		helpText.print(parser, { title = title, summary = summary })
 		process.exit(0)
 	end
 
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local name = parser:get("name") or `pr-{prNumber}`
 
-	local githubToken = assert(process.env.GITHUB_TOKEN, "GITHUB_TOKEN environment variable is required")
-	local repo = assert(process.env.GITHUB_REPOSITORY, "GITHUB_REPOSITORY environment variable is required")
-
 	comment({
 		prNumber = prNumber,
 		name = name,
-		githubToken = githubToken,
-		repo = repo,
+		githubToken = parser:get("github-token") :: string,
+		repo = parser:get("github-repository") :: string,
 	})
 end
 
-return {
+local command: types.Command = {
 	run = run,
-	help = help,
+	title = title,
+	summary = summary,
+	parser = parser,
 }
+
+return command

@@ -2,62 +2,54 @@ local cli = require("@batteries/cli")
 local process = require("@std/process")
 
 local helpText = require("@root/cli/helpText")
+local types = require("@root/cli/types")
 local yank = require("@root/yank")
 
-local help: helpText.HelpConfig = {
-	title = "yank",
-	summary = "Publish an empty place to clear a PR preview",
-	env = {
-		{
-			vars = {
-				{
-					name = "ROBLOX_API_KEY",
-					description = "Roblox API key",
-				},
-				{
-					name = "ROBLOX_STORYBOOK_UNIVERSE_ID",
-					description = "Experience (universe) ID",
-				},
-				{
-					name = "ROBLOX_STORYBOOK_PLACE_ID",
-					description = "Root place ID (Luau Execution host)",
-				},
-			},
-		},
-	},
-}
+local title = "yank"
+local summary = "Publish an empty place to clear a PR preview."
+
+local parser = cli.parser()
+
+parser:add("name", "option", {
+	help = "Name of the PR preview to yank.",
+	required = true,
+})
+parser:add("api-key", "option", {
+	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
+	default = process.env.ROBLOX_API_KEY,
+	required = true,
+})
+parser:add("universe-id", "option", {
+	help = "Universe ID of the experience.",
+})
+parser:add("place-id", "option", {
+	help = "Place ID to publish to.",
+})
+parser:add("help", "flag", {
+	help = "Show this help message",
+})
 
 local function run(args: { string })
-	local parser = cli.parser()
-
-	parser:add("universe-id", "option", {
-		help = "Universe ID of the experience to deploy to.",
-	})
-	parser:add("place-id", "option", {
-		help = "Optional place ID to publish to.",
-	})
-	parser:add("help", "flag", {
-		help = "Show this help message",
-	})
-
 	parser:parse(args)
 
 	if parser:has("help") then
-		helpText.print(parser, help)
+		helpText.print(parser, { title = title, summary = summary })
 		process.exit(0)
 	end
 
-	local name = parser:get("name")
-	assert(name, "--name is required")
-
 	yank({
-		name = name,
+		name = parser:get("name") :: string,
+		apiKey = parser:get("api-key") :: string,
 		universeId = parser:get("universe-id"),
 		placeId = parser:get("place-id"),
 	})
 end
 
-return {
+local command: types.Command = {
 	run = run,
-	help = help,
+	title = title,
+	summary = summary,
+	parser = parser,
 }
+
+return command

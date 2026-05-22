@@ -1,12 +1,5 @@
 local FLAG_COLUMN_WIDTH = 26
 
-local function shouldSkip(name: string, skipFlags: { string }?): boolean
-	if not skipFlags then
-		return false
-	end
-	return table.find(skipFlags, name) ~= nil
-end
-
 local function formatFlagPart(name: string, kind: string, aliases: { string }?): string
 	if kind == "option" then
 		return `--{name} <{name}>`
@@ -30,11 +23,15 @@ local function formatHelpSuffix(help: string?, default: string?): string
 	return table.concat(parts, " ")
 end
 
-local function formatArgLine(name: string, kind: string, options: {
-	help: string?,
-	aliases: { string }?,
-	default: string?,
-}): string
+local function formatArgLine(
+	name: string,
+	kind: string,
+	options: {
+		help: string?,
+		aliases: { string }?,
+		default: string?,
+	}
+): string
 	local flagPart = formatFlagPart(name, kind, options.aliases)
 	local padding = math.max(1, FLAG_COLUMN_WIDTH - #flagPart)
 	local helpPart = formatHelpSuffix(options.help, options.default)
@@ -51,7 +48,6 @@ end
 
 return {
 	FLAG_COLUMN_WIDTH = FLAG_COLUMN_WIDTH,
-	shouldSkip = shouldSkip,
 	formatArgLine = formatArgLine,
 	appendSection = appendSection,
 }

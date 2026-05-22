@@ -34,10 +34,22 @@ local function help()
 		title = "flipbook-cli",
 		summary = "Deploy Flipbook storybook experiences via Open Cloud.",
 		commands = {
-			{ name = "deploy", description = deployCommand.help.summary or "" },
-			{ name = "comment", description = commentCommand.help.summary or "" },
-			{ name = "yank", description = yankCommand.help.summary or "" },
-			{ name = "help", description = "Show this help message" },
+			{
+				name = "deploy",
+				description = deployCommand.summary,
+			},
+			{
+				name = "comment",
+				description = commentCommand.summary,
+			},
+			{
+				name = "yank",
+				description = yankCommand.summary,
+			},
+			{
+				name = "help",
+				description = "Show this help message",
+			},
 		},
 	})
 end
@@ -55,8 +67,8 @@ local function run(args: { string })
 		local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
 		print(richterm.red("Error: " .. message))
 		print()
-		if command.help then
-			command.help()
+		if command.parser then
+			helpText.print(command.parser, { title = command.title, summary = command.summary })
 		else
 			help()
 		end

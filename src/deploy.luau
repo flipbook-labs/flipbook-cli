@@ -1,5 +1,4 @@
 local path = require("@std/path")
-local process = require("@std/process")
 local system = require("@std/system")
 
 local buildPlace = require("@root/buildPlace")
@@ -11,23 +10,16 @@ local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 
 export type DeployOptions = {
 	name: string,
-	storiesPath: string?,
-	flipbookRbxmPath: string?,
-	universeId: string?,
+	apiKey: string,
+	storiesPath: string,
+	universeId: string,
+
 	placeId: string?,
 	dryRun: string?,
 }
 
-local function resolveFlipbookRbxmPath(explicitPath: string?): string
-	if explicitPath then
-		return tostring(path.resolve(explicitPath))
-	end
-
-	return fetchFlipbookRbxm()
-end
-
 local function deploy(options: DeployOptions)
-	local flipbookRbxmPath = resolveFlipbookRbxmPath(options.flipbookRbxmPath)
+	local flipbookRbxmPath = fetchFlipbookRbxm()
 	local rbxlPath = options.dryRun or tostring(path.join(system.tmpdir(), `storybook-{options.name}.rbxl`))
 
 	buildPlace({
@@ -42,13 +34,12 @@ local function deploy(options: DeployOptions)
 		return
 	end
 
-	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
 		placeId = options.placeId,
 	})
-	local placeId, created = resolvePlaceId(options.name, storybook, apiKey)
-	publishPlace(storybook.universeId, placeId, rbxlPath, apiKey)
+	local placeId, created = resolvePlaceId(options.name, storybook, options.apiKey)
+	publishPlace(storybook.universeId, placeId, rbxlPath, options.apiKey)
 
 	print(`Published storybook "{options.name}" to place {placeId} (created={created})`)
 	print("Play: " .. storybookPreviewUrl(placeId))
