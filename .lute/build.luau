@@ -26,7 +26,7 @@ for packageId in lock.packages do
 	local src = path.join(storeDir, packageId)
 	local dst = path.join(packagesDir, packageId)
 	if not fs.exists(dst) then
-		process.run({ "cp", "-r", src, dst }, { stdio = "inherit" })
+		process.run({ "cp", "-r", tostring(src), tostring(dst) }, { stdio = "inherit" })
 	end
 end
 
