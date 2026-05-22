@@ -14,7 +14,7 @@ export type DeployOptions = {
 	storiesPath: string?,
 	flipbookRbxmPath: string?,
 	universeId: string?,
-	startPlaceId: string?,
+	placeId: string?,
 	dryRun: string?,
 }
 
@@ -45,7 +45,7 @@ local function deploy(options: DeployOptions)
 	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
-		startPlaceId = options.startPlaceId,
+		placeId = options.placeId,
 	})
 	local placeId, created = resolvePlaceId(options.name, storybook, apiKey)
 	publishPlace(storybook.universeId, placeId, rbxlPath, apiKey)

@@ -2,12 +2,12 @@ local process = require("@std/process")
 
 export type StorybookConfig = {
 	universeId: string,
-	startPlaceId: string,
+	placeId: string,
 }
 
 export type StorybookConfigOverrides = {
 	universeId: string?,
-	startPlaceId: string?,
+	placeId: string?,
 }
 
 local function loadStorybookConfig(overrides: StorybookConfigOverrides?): StorybookConfig
@@ -18,7 +18,7 @@ local function loadStorybookConfig(overrides: StorybookConfigOverrides?): Storyb
 			process.env.ROBLOX_STORYBOOK_UNIVERSE_ID,
 			"ROBLOX_STORYBOOK_UNIVERSE_ID is required (or pass --universe-id)"
 		),
-		startPlaceId = assert(
+		placeId = resolvedOverrides.placeId or assert(
 			process.env.ROBLOX_STORYBOOK_PLACE_ID,
 			"ROBLOX_STORYBOOK_PLACE_ID (or ROBLOX_STORYBOOK_PLACE_ID) is required (or pass --place-id)"
 		),

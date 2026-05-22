@@ -11,7 +11,7 @@ local resolvePlaceId = require("@root/resolvePlaceId")
 export type YankOptions = {
 	name: string,
 	universeId: string?,
-	startPlaceId: string?,
+	placeId: string?,
 }
 
 local function yank(options: YankOptions)
@@ -20,7 +20,7 @@ local function yank(options: YankOptions)
 	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
-		startPlaceId = options.startPlaceId,
+		placeId = options.placeId,
 	})
 	local placeId = resolvePlaceId(options.name, storybook, apiKey)
 	local rbxlPath = tostring(path.join(system.tmpdir(), `storybook-yank-{options.name}.rbxl`))

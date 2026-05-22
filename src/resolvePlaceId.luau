@@ -1,7 +1,7 @@
 local isMainDeploy = require("@root/isMainDeploy")
+local resolveOrCreatePlaceScript = require("@root/tasks/resolve-or-create-place")
 local runTask = require("@root/runTask")
 local storybookConfig = require("@root/storybookConfig")
-local resolveOrCreatePlaceScript = require("@root/tasks/resolve-or-create-place")
 
 local function resolvePlaceId(
 	name: string,
@@ -9,19 +9,13 @@ local function resolvePlaceId(
 	apiKey: string
 ): (string, boolean)
 	if isMainDeploy(name) then
-		return storybook.startPlaceId, false
+		return storybook.placeId, false
 	end
 
-	local result = runTask(
-		resolveOrCreatePlaceScript,
-		{
-			DESIRED_NAME = name,
-			TEMPLATE_PLACE_ID = storybook.startPlaceId,
-		},
-		storybook.universeId,
-		storybook.startPlaceId,
-		apiKey
-	) :: { placeId: number, created: boolean? }
+	local result: { placeId: number, created: boolean? } = runTask(resolveOrCreatePlaceScript, {
+		DESIRED_NAME = name,
+		TEMPLATE_PLACE_ID = storybook.placeId,
+	}, storybook.universeId, storybook.placeId, apiKey)
 
 	assert(result and result.placeId, "failed to resolve or create place")
 	return tostring(result.placeId), result.created == true

@@ -14,7 +14,7 @@ export type CommentOptions = {
 	githubToken: string,
 	repo: string,
 	universeId: string?,
-	startPlaceId: string?,
+	placeId: string?,
 }
 
 local function comment(options: CommentOptions)
@@ -22,7 +22,7 @@ local function comment(options: CommentOptions)
 	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
 	local storybook = loadStorybookConfig({
 		universeId = options.universeId,
-		startPlaceId = options.startPlaceId,
+		placeId = options.placeId,
 	})
 	local placeId = resolvePlaceId(name, storybook, apiKey)
 
