@@ -4,21 +4,24 @@ local process = require("@std/process")
 local deploy = require("@root/deploy")
 local helpText = require("@root/cli/helpText")
 
-local DESCRIPTION = "Build and publish a storybook place"
-
-local HELP: helpText.HelpConfig = {
+local help: helpText.HelpConfig = {
 	title = "deploy",
-	summary = "Build and publish a storybook place (Open Cloud).",
+	summary = "Deploy an rbxm file containing your storybooks and stories to an experience for previewing.",
 	env = {
 		{
 			title = "ENV VARS (required for publish)",
 			vars = {
-				{ name = "ROBLOX_API_KEY", description = "Roblox API key", required = true },
-				{ name = "ROBLOX_STORYBOOK_UNIVERSE_ID", description = "Experience (universe) ID", required = true },
+				{
+					name = "ROBLOX_API_KEY",
+					description = "Roblox API key",
+				},
+				{
+					name = "ROBLOX_STORYBOOK_UNIVERSE_ID",
+					description = "Experience (universe) ID",
+				},
 				{
 					name = "ROBLOX_STORYBOOK_START_PLACE_ID",
 					description = "Root place ID (main deploy target; template for new PR places)",
-					required = true,
 				},
 			},
 		},
@@ -48,7 +51,7 @@ local function run(args: { string })
 	parser:parse(args)
 
 	if parser:has("help") then
-		helpText.print(parser, HELP)
+		helpText.print(parser, help)
 		process.exit(0)
 	end
 
@@ -62,5 +65,5 @@ end
 
 return {
 	run = run,
-	description = DESCRIPTION,
+	help = help,
 }

@@ -1,4 +1,6 @@
 local dotenv = require("@pkg/dotenv@v0.1.0/src")
+local process = require("@std/process")
+local richterm = require("@batteries/richterm")
 
 local helpText = require("@self/helpText")
 
@@ -32,9 +34,9 @@ local function help()
 		title = "flipbook-cli",
 		summary = "Deploy Flipbook storybook experiences via Open Cloud.",
 		commands = {
-			{ name = "deploy", description = deployCommand.description },
-			{ name = "comment", description = commentCommand.description },
-			{ name = "yank", description = yankCommand.description },
+			{ name = "deploy", description = deployCommand.help.summary or "" },
+			{ name = "comment", description = commentCommand.help.summary or "" },
+			{ name = "yank", description = yankCommand.help.summary or "" },
 			{ name = "help", description = "Show this help message" },
 		},
 	})
@@ -47,7 +49,19 @@ local function run(args: { string })
 
 	local subcommand = findSubcommand(args)
 	local command = availableCommands[subcommand] or availableCommands.help
-	command.run(args)
+
+	local ok, err = pcall(command.run, args)
+	if not ok then
+		local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
+		print(richterm.red("Error: " .. message))
+		print()
+		if command.help then
+			command.help()
+		else
+			help()
+		end
+		process.exit(1)
+	end
 end
 
 return {

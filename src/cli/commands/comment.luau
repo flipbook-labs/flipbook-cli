@@ -4,16 +4,20 @@ local process = require("@std/process")
 local comment = require("@root/comment")
 local helpText = require("@root/cli/helpText")
 
-local DESCRIPTION = "Post or update a PR preview comment"
-
-local HELP: helpText.HelpConfig = {
+local help: helpText.HelpConfig = {
 	title = "comment",
 	summary = "Post or update the storybook preview comment on a pull request.",
 	env = {
 		{
 			vars = {
-				{ name = "GITHUB_TOKEN", description = "GitHub token", required = true },
-				{ name = "GITHUB_REPOSITORY", description = "owner/repo", required = true },
+				{
+					name = "GITHUB_TOKEN",
+					description = "GitHub token",
+				},
+				{
+					name = "GITHUB_REPOSITORY",
+					description = "owner/repo",
+				},
 			},
 		},
 	},
@@ -36,7 +40,7 @@ local function run(args: { string })
 	parser:parse(args)
 
 	if parser:has("help") then
-		helpText.print(parser, HELP)
+		helpText.print(parser, help)
 		process.exit(0)
 	end
 
@@ -56,5 +60,5 @@ end
 
 return {
 	run = run,
-	description = DESCRIPTION,
+	help = help,
 }
