@@ -1,4 +1,6 @@
 local dotenv = require("@pkg/dotenv@v0.1.0/src")
+local process = require("@std/process")
+local richterm = require("@batteries/richterm")
 
 local function findSubcommand(args: { string }): string?
 	local i = 2
@@ -45,7 +47,19 @@ local function run(args: { string })
 
 	local subcommand = findSubcommand(args)
 	local command = availableCommands[subcommand] or availableCommands.help
-	command.run(args)
+
+	local ok, err = pcall(command.run, args)
+	if not ok then
+		local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
+		print(richterm.red("Error: " .. message))
+		print()
+		if command.help then
+			command.help()
+		else
+			help()
+		end
+		process.exit(1)
+	end
 end
 
 return { run = run }

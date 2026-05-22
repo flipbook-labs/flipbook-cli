@@ -57,4 +57,7 @@ local function run(args: { string })
 	})
 end
 
-return { run = run }
+return {
+	run = run,
+	help = help,
+}
