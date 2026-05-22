@@ -9,4 +9,7 @@ return {
 	STATE_DIR = STATE_DIR,
 	FLIPBOOK_RBXM_CACHE = tostring(path.join(STATE_DIR, "Flipbook.rbxm")),
 	FLIPBOOK_RELEASE_META = tostring(path.join(STATE_DIR, "flipbook-release.json")),
+	FLIPBOOK_GITHUB_REPO = "flipbook-labs/flipbook",
+	FLIPBOOK_RBXM_ASSET = "Flipbook.rbxm",
+	MAIN_PLACE_NAME = "main",
 }

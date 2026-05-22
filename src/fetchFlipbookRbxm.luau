@@ -10,9 +10,6 @@ local ensureStateDir = require("@root/ensureStateDir")
 
 local run = FlipbookBatteries.run
 
-local DEFAULT_REPO = "flipbook-labs/flipbook"
-local DEFAULT_ASSET_NAME = "Flipbook.rbxm"
-
 local function releaseApiUrl(repo: string, tag: string?): string
 	if tag then
 		return `https://api.github.com/repos/{repo}/releases/tags/{tag}`
@@ -68,8 +65,8 @@ local function writeCachedReleaseTag(tagName: string)
 end
 
 local function fetchFlipbookRbxm(): string
-	local repo = DEFAULT_REPO
-	local rbxmAssetName = DEFAULT_ASSET_NAME
+	local repo = constants.FLIPBOOK_GITHUB_REPO
+	local rbxmAssetName = constants.FLIPBOOK_RBXM_ASSET
 	local cachePath = constants.FLIPBOOK_RBXM_CACHE
 
 	local cachedTag = readCachedReleaseTag()

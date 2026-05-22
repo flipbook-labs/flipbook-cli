@@ -38,7 +38,7 @@ end
 local function run(args: { string })
 	local parser = cli.parser()
 
-	parser:add("name", "option", { help = "Place name", default = "main" })
+	parser:add("name", "option", { help = "Place name", default = constants.MAIN_PLACE_NAME })
 	parser:add("stories", "option", { help = "Stories .rbxm or directory" })
 	parser:add("universe-id", "option", { help = "Experience (universe) ID" })
 	parser:add("place-id", "option", { help = "Root place ID" })
