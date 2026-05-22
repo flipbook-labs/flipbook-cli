@@ -1,35 +1,41 @@
 local json = require("@std/json")
 local net = require("@std/net")
+local process = require("@std/process")
 
-local readWallyVersion = require("@root/readWallyVersion")
+local loadStorybookConfig = require("@root/storybookConfig")
+local resolvePlaceId = require("@root/resolvePlaceId")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 
 local PR_COMMENT_MARKER = "<!-- flipbook-pr-preview -->"
 
 export type CommentOptions = {
 	prNumber: number,
-	placeId: string,
+	name: string?,
 	githubToken: string,
 	repo: string,
+	universeId: string?,
+	startPlaceId: string?,
 }
 
 local function comment(options: CommentOptions)
-	local runtimeVersion = readWallyVersion()
-	local prUrl = storybookPreviewUrl(options.prNumber, options.placeId)
-	local allUrl = "https://www.roblox.com/games/" .. options.placeId
+	local name = options.name or `pr-{options.prNumber}`
+	local apiKey = assert(process.env.ROBLOX_API_KEY, "ROBLOX_API_KEY environment variable is required")
+	local storybook = loadStorybookConfig({
+		universeId = options.universeId,
+		startPlaceId = options.startPlaceId,
+	})
+	local placeId = resolvePlaceId(name, storybook, apiKey)
+
 	local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 	local body = PR_COMMENT_MARKER
 		.. "\n## Storybook Preview\n\n"
 		.. "| | Link |\n|--|------|\n"
-		.. "| This PR | [Open in Roblox]("
-		.. prUrl
-		.. ") |\n"
-		.. "| All open PRs | [Browse all]("
-		.. allUrl
+		.. "| Play | [Open in Roblox]("
+		.. storybookPreviewUrl(placeId)
 		.. ") |\n\n"
-		.. "*Runtime v"
-		.. runtimeVersion
-		.. " · "
+		.. "*Place `"
+		.. name
+		.. "` · "
 		.. timestamp
 		.. "*"
 

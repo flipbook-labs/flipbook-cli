@@ -1,6 +1,5 @@
-local function storybookPreviewUrl(prNumber: number, placeId: string): string
-	local encodedRoot = "storyRoot%3DPRStorybooks%2Fpr-" .. prNumber
-	return "https://www.roblox.com/games/" .. placeId .. "?launchData=" .. encodedRoot
+local function storybookPreviewUrl(placeId: string): string
+	return "https://www.roblox.com/games/" .. placeId
 end
 
 return storybookPreviewUrl

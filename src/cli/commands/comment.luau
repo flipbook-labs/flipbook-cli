@@ -13,15 +13,17 @@ USAGE:
 
 REQUIRED:
   --pr <number>              Pull request number
-  --place-id <id>            Roblox Place ID (or set ROBLOX_STORYBOOK_PLACE_ID)
+
+OPTIONS:
+  --name <name>              Deploy place name (default: pr-<number>)
+  --help                     Show this help message
 
 ENV VARS:
-  ROBLOX_STORYBOOK_PLACE_ID  Fallback for --place-id
-  GITHUB_TOKEN               GitHub token for posting comments
-  GITHUB_REPOSITORY          GitHub repository (owner/repo)
-
-FLAGS:
-  --help                     Show this help message
+  ROBLOX_API_KEY               Roblox API key (resolves place by name)
+  ROBLOX_STORYBOOK_UNIVERSE_ID Experience (universe) ID
+  ROBLOX_STORYBOOK_PLACE_ID Root place ID
+  GITHUB_TOKEN                 GitHub token
+  GITHUB_REPOSITORY            owner/repo
 ]])
 end
 
@@ -29,7 +31,7 @@ local function run(args: { string })
 	local parser = cli.parser()
 
 	parser:add("pr", "option", { help = "PR number" })
-	parser:add("place-id", "option", { help = "Roblox Place ID" })
+	parser:add("name", "option", { help = "Deploy place name" })
 	parser:add("help", "flag")
 
 	parser:parse(args)
@@ -40,16 +42,14 @@ local function run(args: { string })
 	end
 
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
-
-	local placeId = parser:get("place-id") or process.env.ROBLOX_STORYBOOK_PLACE_ID
-	assert(placeId, "place-id must be provided via --place-id or ROBLOX_STORYBOOK_PLACE_ID env var")
+	local name = parser:get("name") or `pr-{prNumber}`
 
 	local githubToken = assert(process.env.GITHUB_TOKEN, "GITHUB_TOKEN environment variable is required")
 	local repo = assert(process.env.GITHUB_REPOSITORY, "GITHUB_REPOSITORY environment variable is required")
 
 	comment({
 		prNumber = prNumber,
-		placeId = placeId,
+		name = name,
 		githubToken = githubToken,
 		repo = repo,
 	})
