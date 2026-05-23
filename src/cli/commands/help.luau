@@ -1,6 +1,7 @@
 local helpText = require("@root/cli/helpText")
 local types = require("@root/cli/types")
 
+local installCommand = require("@root/commands/install")
 local commentCommand = require("@root/cli/commands/comment")
 local deployCommand = require("@root/cli/commands/deploy")
 local yankCommand = require("@root/cli/commands/yank")
@@ -16,6 +17,10 @@ local function run(_args: { string })
 			{
 				name = "deploy",
 				description = deployCommand.summary,
+			},
+			{
+				name = "install",
+				description = installCommand.summary,
 			},
 			{
 				name = "comment",

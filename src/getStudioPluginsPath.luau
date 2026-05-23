@@ -1,0 +1,14 @@
+-- Canonical copy: keep in sync with flipbook/lib/getStudioPluginsPath.luau
+local path = require("@std/path")
+local process = require("@std/process")
+local system = require("@std/system")
+
+local function getStudioPluginsPath(): path.Path
+	if system.os == "Darwin" then
+		return path.join(process.homedir(), "Documents/Roblox/Plugins")
+	else
+		return path.join(process.homedir(), "AppData/Local/Roblox/Plugins")
+	end
+end
+
+return getStudioPluginsPath
