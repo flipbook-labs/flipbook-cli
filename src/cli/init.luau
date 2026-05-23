@@ -4,6 +4,7 @@ local richterm = require("@batteries/richterm")
 local helpText = require("@self/helpText")
 local types = require("@self/types")
 
+local installCommand = require("@root/commands/install")
 local commentCommand = require("@self/commands/comment")
 local deployCommand = require("@self/commands/deploy")
 local helpCommand = require("@self/commands/help")
@@ -26,6 +27,7 @@ end
 
 local availableCommands: { [string]: types.Command } = {
 	deploy = deployCommand,
+	install = installCommand,
 	comment = commentCommand,
 	yank = yankCommand,
 	help = helpCommand,

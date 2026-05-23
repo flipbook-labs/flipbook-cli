@@ -25,6 +25,23 @@ API key scopes: `universe.place.luau-execution-session:write`, `universe-places`
 
 ## Commands
 
+### `install`
+
+Download `Flipbook.rbxm` from [GitHub Releases](https://github.com/flipbook-labs/flipbook/releases) and install it to your Roblox Studio plugins folder.
+
+```sh
+flipbook-cli install
+flipbook-cli install --tag v9.0.0
+flipbook-cli install --output /path/to/Flipbook.rbxm
+```
+
+| Flag       | Description                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| `--tag`    | Release tag (e.g. `v9.0.0` or `9.0.0`). Default: latest stable     |
+| `--output` | Install path (default: Studio plugins folder / `Flipbook.rbxm`)    |
+
+Optional `GITHUB_TOKEN` improves GitHub API rate limits when fetching releases.
+
 ### `deploy`
 
 Build a place (Rojo project generated at deploy time), resolve or create a named place, and publish.

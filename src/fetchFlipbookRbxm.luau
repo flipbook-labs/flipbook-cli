@@ -8,6 +8,11 @@ local getTempDir = require("@root/getTempDir")
 
 local GITHUB_REPO = "flipbook-labs/flipbook"
 local RBXM_ASSET_NAME = "Flipbook.rbxm"
+local RELEASES_API = `https://api.github.com/repos/{GITHUB_REPO}/releases`
+
+export type FetchFlipbookRbxmOptions = {
+	tag: string?,
+}
 
 local function githubHeaders(): { [string]: string }
 	local headers: { [string]: string } = {
@@ -21,8 +26,23 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function fetchRelease(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
-	local url = `https://api.github.com/repos/{GITHUB_REPO}/releases/latest`
+local function normalizeTag(tag: string): string
+	if string.sub(tag, 1, 1) == "v" then
+		return tag
+	end
+	return "v" .. tag
+end
+
+local function releaseApiUrl(options: FetchFlipbookRbxmOptions?): string
+	local tag = options and options.tag
+	if tag == nil or tag == "" then
+		return `{RELEASES_API}/latest`
+	end
+	return `{RELEASES_API}/tags/{normalizeTag(tag)}`
+end
+
+local function fetchRelease(options: FetchFlipbookRbxmOptions?): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+	local url = releaseApiUrl(options)
 	local response = net.request(url, {
 		method = "GET",
 		headers = githubHeaders(),
@@ -44,8 +64,8 @@ local function findAssetDownloadUrl(release: any): string
 	error(`release {release.tag_name} has no asset named "{RBXM_ASSET_NAME}"`)
 end
 
-local function fetchFlipbookRbxm(): string
-	local release = fetchRelease()
+local function fetchFlipbookRbxm(options: FetchFlipbookRbxmOptions?): string
+	local release = fetchRelease(options)
 	local downloadUrl = findAssetDownloadUrl(release)
 
 	print(`Downloading {RBXM_ASSET_NAME} from {GITHUB_REPO} release {release.tag_name}...`)
@@ -59,7 +79,7 @@ local function fetchFlipbookRbxm(): string
 		error(`failed to download {RBXM_ASSET_NAME} ({response.status})`)
 	end
 
-	local flipbookRbxmPath = tostring(path.join(getTempDir(), "Flipbook.rbxm"))
+	local flipbookRbxmPath = tostring(path.join(getTempDir(), RBXM_ASSET_NAME))
 	fs.writeStringToFile(flipbookRbxmPath, response.body)
 
 	return flipbookRbxmPath
