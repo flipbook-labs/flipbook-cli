@@ -5,16 +5,15 @@ local path = require("@std/path")
 local system = require("@std/system")
 
 local config = require("@root/config")
-local types = require("@root/types")
 
 local run = FlipbookBatteries.run
-
-type LuauExecutionContext = types.LuauExecutionContext
 
 local function runTaskAsync(
 	script: string,
 	globals: { [string]: string | number | boolean },
-	luauExecutionContext: LuauExecutionContext
+	universeId: number,
+	placeId: number?,
+	apiKey: string
 ): any
 	local parts = {}
 	for key, value in globals do
@@ -29,21 +28,18 @@ local function runTaskAsync(
 		"--script",
 		scriptPath,
 		"--universeId",
-		luauExecutionContext.universeId,
+		universeId,
 	}
-	if luauExecutionContext.placeId then
+	if placeId then
 		table.insert(cliArgs, "--placeId")
-		table.insert(cliArgs, luauExecutionContext.placeId)
+		table.insert(cliArgs, placeId)
 	end
 	table.insert(cliArgs, "--lua.globals")
 	table.insert(cliArgs, table.concat(parts, ","))
 
 	local output
 	local ok, err = pcall(function()
-		output = run(config.rocaleCmd, cliArgs :: { any }, {
-			env = { ROBLOX_API_KEY = luauExecutionContext.apiKey },
-			captureOutput = true,
-		})
+		output = run(config.rocaleCmd, cliArgs :: { any }, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
 	end)
 
 	fs.remove(scriptPath)

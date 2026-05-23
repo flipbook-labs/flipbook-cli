@@ -56,8 +56,7 @@ local function run(args: { string })
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
 	local placeId = tonumber(parser:get("place-id"))
 
-	local allocatedPlaceId = resolvePlaceIdAsync(placeName, {
-		apiKey = apiKey,
+	local allocatedPlaceId = resolvePlaceIdAsync(placeName, apiKey, {
 		universeId = universeId,
 		placeId = placeId,
 	})

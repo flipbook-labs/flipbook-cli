@@ -98,8 +98,7 @@ local function run(args: { string })
 		return
 	end
 
-	local allocatedPlaceId, created = resolvePlaceIdAsync(placeName, {
-		apiKey = apiKey,
+	local allocatedPlaceId, created = resolvePlaceIdAsync(placeName, apiKey, {
 		universeId = universeId,
 		placeId = placeId,
 	})
