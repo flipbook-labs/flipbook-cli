@@ -3,10 +3,11 @@ local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
 
-local fetchFlipbookRbxm = require("@root/fetchFlipbookRbxm")
+local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
 local getTempDir = require("@root/getTempDir")
-local publishPlace = require("@root/publishPlace")
-local resolvePlaceId = require("@root/resolvePlaceId")
+local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
+local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
+local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -41,16 +42,6 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-export type DeployOptions = {
-	placeName: string,
-	apiKey: string,
-	storiesPath: path.Pathlike,
-	universeId: string,
-
-	placeId: string?,
-	dryRun: string?,
-}
-
 local function run(args: { string })
 	parser:parse(args)
 
@@ -73,7 +64,7 @@ local function run(args: { string })
 	local dryRun = parser:get("dry-run")
 	local placeId = tonumber(parser:get("place-id"))
 
-	local flipbookRbxmPath = fetchFlipbookRbxm()
+	local flipbookRbxmPath = getFlipbookRbxmAsync()
 
 	local outputRbxlPath = rojoBuild({
 		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
@@ -94,18 +85,23 @@ local function run(args: { string })
 		},
 	})
 
+	local startPlace = getUniverseStartPlaceAsync(universeId, apiKey)
+
+	local allocatedPlaceId = if placeId
+		then placeId
+		else resolvePlaceIdAsync(placeName, {
+			apiKey = apiKey,
+			universeId = universeId,
+			placeId = startPlace,
+		})
+
 	if dryRun then
 		return
 	end
 
-	local allocatedPlaceId, created = resolvePlaceId(placeName, {
-		apiKey = apiKey,
-		universeId = universeId,
-		placeId = placeId,
-	})
-	publishPlace(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
+	publishPlaceAsync(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
 
-	print(`Published storybook "{placeName}" to place {allocatedPlaceId} (created={created})`)
+	print(`Published storybook "{placeName}" to place {allocatedPlaceId})`)
 	print("Play: " .. storybookPreviewUrl(allocatedPlaceId))
 end
 

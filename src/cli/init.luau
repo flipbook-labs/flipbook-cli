@@ -36,7 +36,15 @@ local function run(args: { string })
 	local command: types.Command = (subcommand and availableCommands[subcommand]) or availableCommands.help
 
 	if command.parser then
-		command.parser:parse(args)
+		local ok, err = pcall(command.parser.parse, command.parser, args)
+		if not ok then
+			local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
+			print(richterm.red("Error: " .. message))
+			print()
+			helpText.print(command.parser, { title = command.title, summary = command.summary })
+			process.exit(1)
+		end
+
 		if command.parser:has("help") then
 			helpText.print(command.parser, {
 				title = command.title,
@@ -46,18 +54,7 @@ local function run(args: { string })
 		end
 	end
 
-	local ok, err = pcall(command.run, args)
-	if not ok then
-		local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
-		print(richterm.red("Error: " .. message))
-		print()
-		if command.parser then
-			helpText.print(command.parser, { title = command.title, summary = command.summary })
-		else
-			helpCommand.run(args)
-		end
-		process.exit(1)
-	end
+	command.run(args)
 end
 
 return {

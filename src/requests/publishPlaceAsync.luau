@@ -5,7 +5,7 @@ local config = require("@root/config")
 
 local run = FlipbookBatteries.run
 
-local function publishPlace(universeId: number, placeId: number, rbxlPath: path.Pathlike, apiKey: string)
+local function publishPlaceAsync(universeId: number, placeId: number, rbxlPath: path.Pathlike, apiKey: string)
 	local url = `https://apis.roblox.com/universes/v1/{universeId}/places/{placeId}/versions?versionType=Published`
 	run(config.curlCmd, {
 		"--fail-with-body",
@@ -24,4 +24,4 @@ local function publishPlace(universeId: number, placeId: number, rbxlPath: path.
 	})
 end
 
-return publishPlace
+return publishPlaceAsync
