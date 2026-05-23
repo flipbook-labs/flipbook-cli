@@ -21,6 +21,8 @@ local function rojoBuild(options: {
 		tostring(projectPath),
 		"--output",
 		tostring(outputPath),
+	}, {
+		stdio = "inherit",
 	})
 
 	return outputPath
