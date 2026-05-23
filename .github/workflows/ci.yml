@@ -16,8 +16,8 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install loom dependencies
-        run: lute pkg install
+      - name: Install depenendencies and build
+        run: lute run build
 
       - name: Build flipbook-cli
         run: lute run build
@@ -32,8 +32,8 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install loom dependencies
-        run: lute pkg install
+      - name: Install depenendencies and build
+        run: lute run build
 
       - name: Test
         run: lute test
@@ -48,8 +48,8 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install loom dependencies
-        run: lute pkg install
+      - name: Install depenendencies and build
+        run: lute run build
 
       - name: Analyze
         run: lute run analyze
