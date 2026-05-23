@@ -4,10 +4,10 @@ local path = require("@std/path")
 local process = require("@std/process")
 
 local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
+local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
 local getTempDir = require("@root/getTempDir")
 local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
-local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -90,7 +90,7 @@ local function run(args: { string })
 
 	local allocatedPlaceId = if placeId
 		then placeId
-		else resolvePlaceIdAsync(placeName, {
+		else getOrCreatePlaceByNameAsync(placeName, {
 			apiKey = apiKey,
 			universeId = universeId,
 			placeId = startPlace,

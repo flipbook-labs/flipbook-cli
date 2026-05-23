@@ -6,7 +6,7 @@ local types = require("@root/types")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-local function resolvePlaceIdAsync(placeName: string, luauExecutionContext: LuauExecutionContext): number
+local function getOrCreatePlaceByNameAsync(placeName: string, luauExecutionContext: LuauExecutionContext): number
 	print(`Resolving place ID for {placeName}...`)
 
 	local result = runTaskAsync(resolveOrCreatePlaceScript, {
@@ -29,4 +29,4 @@ local function resolvePlaceIdAsync(placeName: string, luauExecutionContext: Luau
 	return placeId
 end
 
-return resolvePlaceIdAsync
+return getOrCreatePlaceByNameAsync

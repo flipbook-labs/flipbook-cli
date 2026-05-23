@@ -4,9 +4,9 @@ local process = require("@std/process")
 
 local types = require("@root/cli/types")
 
+local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
 local getTempDir = require("@root/getTempDir")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
-local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 
 export type YankOptions = {
@@ -56,7 +56,7 @@ local function run(args: { string })
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
 	local placeId = tonumber(parser:get("place-id"))
 
-	local allocatedPlaceId = resolvePlaceIdAsync(placeName, {
+	local allocatedPlaceId = getOrCreatePlaceByNameAsync(placeName, {
 		apiKey = apiKey,
 		universeId = universeId,
 		placeId = placeId,
