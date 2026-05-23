@@ -68,7 +68,7 @@ local function run(args: { string })
 
 	print("Building rbxl for deployment...")
 	local outputRbxlPath = rojoBuild({
-		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
+		output = path.join(getTempDir(), `deploy-{os.time()}.rbxl`),
 		project = {
 			name = placeName,
 			emitLegacyScripts = false,
