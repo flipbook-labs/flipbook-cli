@@ -1,7 +1,7 @@
 local resolveOrCreatePlaceScript = require("@root/tasks/resolve-or-create-place")
-local runTask = require("@root/runTask")
+local runTaskAsync = require("@root/requests/runTaskAsync")
 
-local function resolvePlaceId(
+local function resolvePlaceIdAsync(
 	placeName: string,
 	apiKey: string,
 	luauExecutionContext: {
@@ -9,7 +9,7 @@ local function resolvePlaceId(
 		placeId: number?,
 	}
 ): (number, boolean)
-	local result: { placeId: string, created: boolean? } = runTask(resolveOrCreatePlaceScript, {
+	local result: { placeId: string, created: boolean? } = runTaskAsync(resolveOrCreatePlaceScript, {
 		DESIRED_NAME = placeName,
 	}, luauExecutionContext.universeId, luauExecutionContext.placeId, apiKey)
 
@@ -17,4 +17,4 @@ local function resolvePlaceId(
 	return assert(tonumber(result.placeId), "placeId from task was not a valid number"), result.created == true
 end
 
-return resolvePlaceId
+return resolvePlaceIdAsync

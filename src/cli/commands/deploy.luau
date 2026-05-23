@@ -3,10 +3,10 @@ local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
 
-local fetchFlipbookRbxm = require("@root/fetchFlipbookRbxm")
+local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
 local getTempDir = require("@root/getTempDir")
-local publishPlace = require("@root/publishPlace")
-local resolvePlaceId = require("@root/resolvePlaceId")
+local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
+local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -73,7 +73,7 @@ local function run(args: { string })
 	local dryRun = parser:get("dry-run")
 	local placeId = tonumber(parser:get("place-id"))
 
-	local flipbookRbxmPath = fetchFlipbookRbxm()
+	local flipbookRbxmPath = getFlipbookRbxmAsync()
 
 	local outputRbxlPath = rojoBuild({
 		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
@@ -98,11 +98,11 @@ local function run(args: { string })
 		return
 	end
 
-	local allocatedPlaceId, created = resolvePlaceId(placeName, apiKey, {
+	local allocatedPlaceId, created = resolvePlaceIdAsync(placeName, apiKey, {
 		universeId = universeId,
 		placeId = placeId,
 	})
-	publishPlace(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
+	publishPlaceAsync(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
 
 	print(`Published storybook "{placeName}" to place {allocatedPlaceId} (created={created})`)
 	print("Play: " .. storybookPreviewUrl(allocatedPlaceId))

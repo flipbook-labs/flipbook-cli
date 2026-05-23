@@ -8,7 +8,7 @@ local config = require("@root/config")
 
 local run = FlipbookBatteries.run
 
-local function runTask(
+local function runTaskAsync(
 	script: string,
 	globals: { [string]: string | number | boolean },
 	universeId: number,
@@ -58,4 +58,4 @@ local function runTask(
 	return nil
 end
 
-return runTask
+return runTaskAsync
