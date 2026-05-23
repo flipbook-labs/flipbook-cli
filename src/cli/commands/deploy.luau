@@ -98,7 +98,8 @@ local function run(args: { string })
 		return
 	end
 
-	local allocatedPlaceId, created = resolvePlaceId(placeName, apiKey, {
+	local allocatedPlaceId, created = resolvePlaceId(placeName, {
+		apiKey = apiKey,
 		universeId = universeId,
 		placeId = placeId,
 	})

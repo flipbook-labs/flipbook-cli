@@ -11,9 +11,11 @@ local run = FlipbookBatteries.run
 local function runTask(
 	script: string,
 	globals: { [string]: string | number | boolean },
-	universeId: number,
-	placeId: number?,
-	apiKey: string
+	luauExecutionContext: {
+		apiKey: string,
+		universeId: number,
+		placeId: number?,
+	}
 ): any
 	local parts = {}
 	for key, value in globals do
@@ -28,18 +30,23 @@ local function runTask(
 		"--script",
 		scriptPath,
 		"--universeId",
-		universeId,
+		luauExecutionContext.universeId,
 	}
-	if placeId then
+	if luauExecutionContext.placeId then
 		table.insert(cliArgs, "--placeId")
-		table.insert(cliArgs, placeId)
+		table.insert(cliArgs, luauExecutionContext.placeId)
 	end
 	table.insert(cliArgs, "--lua.globals")
 	table.insert(cliArgs, table.concat(parts, ","))
 
 	local output
 	local ok, err = pcall(function()
-		output = run(config.rocaleCmd, cliArgs :: { any }, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
+		output = run(config.rocaleCmd, cliArgs :: { any }, {
+			env = {
+				ROBLOX_API_KEY = luauExecutionContext.apiKey,
+			},
+			captureOutput = true,
+		})
 	end)
 
 	fs.remove(scriptPath)
