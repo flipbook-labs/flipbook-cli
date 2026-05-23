@@ -18,7 +18,7 @@ local function runTaskAsync(
 ): unknown
 	local parts = {}
 	for key, value in globals do
-		table.insert(parts, key .. "=" .. tostring(value))
+		table.insert(parts, `{key}="{value}"`)
 	end
 
 	local scriptPath = tostring(path.join(system.tmpdir(), `flipbook-task-{os.time()}.luau`))
