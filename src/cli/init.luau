@@ -25,7 +25,7 @@ local function findSubcommand(args: { string }): string?
 	return nil
 end
 
-local availableCommands = {
+local availableCommands: { [string]: types.Command } = {
 	deploy = deployCommand,
 	comment = commentCommand,
 	yank = yankCommand,
@@ -35,16 +35,10 @@ local availableCommands = {
 local function run(args: { string })
 	dotenv.config()
 
-	for k, v in args do
-		print(k, v)
-	end
-
 	local subcommand = findSubcommand(args)
-	print(subcommand)
-	local command: types.Command = availableCommands[subcommand] or availableCommands.help
+	local command: types.Command = (subcommand and availableCommands[subcommand]) or availableCommands.help
 
 	if command.parser and command.parser:has("help") then
-		print("hwathat?")
 		helpText.print(command.parser, {
 			title = command.title,
 			summary = command.summary,

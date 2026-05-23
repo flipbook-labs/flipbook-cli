@@ -3,7 +3,6 @@ local json = require("@std/json")
 local net = require("@std/net")
 local process = require("@std/process")
 
-local resolvePlaceId = require("@root/resolvePlaceId")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
@@ -31,6 +30,10 @@ parser:add("github-repository", "option", {
 parser:add("name", "option", {
 	help = "Deploy name",
 })
+parser:add("place-id", "option", {
+	help = "Place ID of the deployed storybook.",
+	required = true,
+})
 parser:add("help", "flag", {
 	help = "Show this help message",
 })
@@ -48,20 +51,17 @@ export type CommentOptions = {
 local function run(args: { string })
 	parser:parse(args)
 
-	local apiKey = assert(
-		parser:get("api-key") or process.env.ROBLOX_API_KEY,
-		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
-	)
-
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local name = parser:get("name") or `pr-{prNumber}`
-
-	local name = options.name or `pr-{options.prNumber}`
-	local storybook = {
-		universeId = options.universeId,
-		placeId = options.placeId,
-	}
-	local placeId = resolvePlaceId(name, storybook, options.apiKey)
+	local githubToken = assert(
+		parser:get("github-token"),
+		"A GitHub token is required, use --github-token or the GITHUB_TOKEN env var to supply it"
+	)
+	local repo = assert(
+		parser:get("github-repository"),
+		"A GitHub repository (owner/repo) is required, use --github-repository or the GITHUB_REPOSITORY env var"
+	)
+	local placeId = assert(tonumber(parser:get("place-id")), "--place-id must be a number")
 
 	local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 	local body = PR_COMMENT_MARKER
@@ -77,13 +77,13 @@ local function run(args: { string })
 		.. "*"
 
 	local headers: { [string]: string } = {
-		Authorization = "Bearer " .. options.githubToken,
+		Authorization = "Bearer " .. githubToken,
 		Accept = "application/vnd.github+json",
 		["Content-Type"] = "application/json",
 	}
 
 	local listResponse = net.request(
-		"https://api.github.com/repos/" .. options.repo .. "/issues/" .. options.prNumber .. "/comments?per_page=100",
+		"https://api.github.com/repos/" .. repo .. "/issues/" .. prNumber .. "/comments?per_page=100",
 		{ method = "GET", headers = headers }
 	)
 	local comments = json.deserialize(listResponse.body) :: any
@@ -98,12 +98,12 @@ local function run(args: { string })
 	local payload = json.serialize({ body = body })
 	if existingId then
 		net.request(
-			"https://api.github.com/repos/" .. options.repo .. "/issues/comments/" .. existingId,
+			"https://api.github.com/repos/" .. repo .. "/issues/comments/" .. existingId,
 			{ method = "PATCH", headers = headers, body = payload }
 		)
 	else
 		net.request(
-			"https://api.github.com/repos/" .. options.repo .. "/issues/" .. options.prNumber .. "/comments",
+			"https://api.github.com/repos/" .. repo .. "/issues/" .. prNumber .. "/comments",
 			{ method = "POST", headers = headers, body = payload }
 		)
 	end

@@ -1,4 +1,4 @@
-local function storybookPreviewUrl(placeId: string): string
+local function storybookPreviewUrl(placeId: number): string
 	return "https://www.roblox.com/games/" .. placeId
 end
 

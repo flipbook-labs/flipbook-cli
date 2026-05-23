@@ -52,8 +52,9 @@ local function run(args: { string })
 	)
 
 	local placeName = parser:get("place-name") :: string
-	local universeId = parser:get("universe-id") :: string
-	local placeId = parser:get("place-id")
+	local universeIdStr = parser:get("universe-id")
+	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
+	local placeId = tonumber(parser:get("place-id"))
 
 	local allocatedPlaceId = resolvePlaceId(placeName, apiKey, {
 		universeId = universeId,

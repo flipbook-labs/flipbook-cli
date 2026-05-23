@@ -2,7 +2,6 @@ local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
-local system = require("@std/system")
 
 local fetchFlipbookRbxm = require("@root/fetchFlipbookRbxm")
 local getTempDir = require("@root/getTempDir")
@@ -69,7 +68,7 @@ local function run(args: { string })
 	)
 
 	local dryRun = parser:get("dry-run")
-	local placeId = parser:get("place-id")
+	local placeId = tonumber(parser:get("place-id"))
 
 	local flipbookRbxmPath = fetchFlipbookRbxm()
 

@@ -6,7 +6,7 @@ local function resolvePlaceId(
 	apiKey: string,
 	luauExecutionContext: {
 		universeId: number,
-		placeId: number,
+		placeId: number?,
 	}
 ): (number, boolean)
 	local result: { placeId: string, created: boolean? } = runTask(resolveOrCreatePlaceScript, {
@@ -14,7 +14,7 @@ local function resolvePlaceId(
 	}, luauExecutionContext.universeId, luauExecutionContext.placeId, apiKey)
 
 	assert(result and result.placeId, "failed to resolve or create place")
-	return tonumber(result.placeId), result.created == true
+	return assert(tonumber(result.placeId), "placeId from task was not a valid number"), result.created == true
 end
 
 return resolvePlaceId
