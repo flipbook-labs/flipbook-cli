@@ -4,9 +4,7 @@ local system = require("@std/system")
 
 local function getTempDir(): string
 	local dir = tostring(path.join(system.tmpdir(), "flipbook-cli"))
-	if not fs.exists(dir) then
-		fs.createDirectory(dir, { makeParents = true })
-	end
+	fs.createDirectory(dir, { makeParents = true })
 	return dir
 end
 

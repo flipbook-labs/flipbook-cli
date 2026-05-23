@@ -7,7 +7,7 @@ local fetchFlipbookRbxm = require("@root/fetchFlipbookRbxm")
 local getTempDir = require("@root/getTempDir")
 local publishPlace = require("@root/publishPlace")
 local resolvePlaceId = require("@root/resolvePlaceId")
-local rojoBuild = require("@root/rojoBuild")
+local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
@@ -30,6 +30,9 @@ parser:add("universe-id", "option", {
 parser:add("stories", "option", {
 	help = "Path to an rbxm file containing storybooks and stories.",
 	required = true,
+})
+parser:add("place-id", "option", {
+	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
 parser:add("dry-run", "option", {
 	help = "Skip any steps that would make changes to the live Roblox experience.",

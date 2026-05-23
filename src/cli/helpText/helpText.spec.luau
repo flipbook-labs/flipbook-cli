@@ -26,13 +26,6 @@ test.suite("helpText.build", function(suite)
 		output = helpText.build(makeParser(), {
 			title = "test-cli example",
 			summary = "A test command.",
-			env = {
-				{
-					vars = {
-						{ name = "EXAMPLE_TOKEN", description = "Example token" },
-					},
-				},
-			},
 		})
 	end)
 
@@ -59,10 +52,6 @@ test.suite("helpText.build", function(suite)
 		assert.strContains(output, "(default: main)")
 	end)
 
-	suite:case("includes ENV VARS section", function(assert)
-		assert.strContains(output, "ENV VARS:")
-		assert.strContains(output, "EXAMPLE_TOKEN")
-	end)
 end)
 
 test.suite("helpText.buildRoot", function(suite)

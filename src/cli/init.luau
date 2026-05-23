@@ -1,4 +1,3 @@
-local dotenv = require("@pkg/dotenv@v0.1.0/src")
 local process = require("@std/process")
 local richterm = require("@batteries/richterm")
 
@@ -33,17 +32,18 @@ local availableCommands: { [string]: types.Command } = {
 }
 
 local function run(args: { string })
-	dotenv.config()
-
 	local subcommand = findSubcommand(args)
 	local command: types.Command = (subcommand and availableCommands[subcommand]) or availableCommands.help
 
-	if command.parser and command.parser:has("help") then
-		helpText.print(command.parser, {
-			title = command.title,
-			summary = command.summary,
-		})
-		process.exit(0)
+	if command.parser then
+		command.parser:parse(args)
+		if command.parser:has("help") then
+			helpText.print(command.parser, {
+				title = command.title,
+				summary = command.summary,
+			})
+			process.exit(0)
+		end
 	end
 
 	local ok, err = pcall(command.run, args)

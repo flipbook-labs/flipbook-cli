@@ -7,7 +7,7 @@ local types = require("@root/cli/types")
 local getTempDir = require("@root/getTempDir")
 local publishPlace = require("@root/publishPlace")
 local resolvePlaceId = require("@root/resolvePlaceId")
-local rojoBuild = require("@root/rojoBuild")
+local rojoBuild = require("@root/rojo/rojoBuild")
 
 export type YankOptions = {
 	placeName: string,

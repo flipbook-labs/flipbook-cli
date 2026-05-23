@@ -38,16 +38,6 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-export type CommentOptions = {
-	prNumber: number,
-	apiKey: string,
-	name: string?,
-	githubToken: string,
-	repo: string,
-	universeId: string?,
-	placeId: string?,
-}
-
 local function run(args: { string })
 	parser:parse(args)
 

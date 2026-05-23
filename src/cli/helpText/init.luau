@@ -22,7 +22,7 @@ type ArgData = {
 	},
 }
 
-local function collectArgLines(parser: cli.Parser, config: HelpConfig): ({ string }, { string })
+local function collectArgLines(parser: cli.Parser): ({ string }, { string })
 	local requiredLines: { string } = {}
 	local optionLines: { string } = {}
 
@@ -58,7 +58,7 @@ local function build(parser: cli.Parser, config: HelpConfig): string
 	table.insert(lines, `  {parser:usage(title)}`)
 	table.insert(lines, "")
 
-	local requiredLines, optionLines = collectArgLines(parser, config)
+	local requiredLines, optionLines = collectArgLines(parser)
 
 	if #requiredLines > 0 then
 		format.appendSection(lines, "REQUIRED", requiredLines)

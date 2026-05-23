@@ -1,18 +1,19 @@
 local path = require("@std/path")
 local process = require("@std/process")
 
-local config = require("./config")
-local getTempDir = require("./getTempDir")
+local config = require("@root/config")
+local createRojoProject = require("@root/rojo/createRojoProject")
+local getTempDir = require("@root/getTempDir")
+local types = require("@root/rojo/types")
 
 local function rojoBuild(options: {
 	output: path.Pathlike,
-	project: {
-		name: string,
-		tree: any,
-	},
+	project: types.RojoProjectContent,
 }): path.Path
 	local projectPath = path.join(getTempDir(), `rojo-project-{options.project.name}.json`)
 	local outputPath = path.resolve(options.output)
+
+	createRojoProject(projectPath, options.project)
 
 	process.run({
 		config.rojoCmd,

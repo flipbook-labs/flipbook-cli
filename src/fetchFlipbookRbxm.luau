@@ -3,7 +3,8 @@ local json = require("@std/json")
 local net = require("@std/net")
 local path = require("@std/path")
 local process = require("@std/process")
-local system = require("@std/system")
+
+local getTempDir = require("@root/getTempDir")
 
 local GITHUB_REPO = "flipbook-labs/flipbook"
 local RBXM_ASSET_NAME = "Flipbook.rbxm"
@@ -58,7 +59,7 @@ local function fetchFlipbookRbxm(): string
 		error(`failed to download {RBXM_ASSET_NAME} ({response.status})`)
 	end
 
-	local flipbookRbxmPath = tostring(path.join(system.tmpdir(), "Flipbook.rbxm"))
+	local flipbookRbxmPath = tostring(path.join(getTempDir(), "Flipbook.rbxm"))
 	fs.writeStringToFile(flipbookRbxmPath, response.body)
 
 	return flipbookRbxmPath
