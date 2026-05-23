@@ -40,7 +40,7 @@ local function runTaskAsync(
 			env = {
 				ROBLOX_API_KEY = luauExecutionContext.apiKey,
 			},
-			-- captureOutput = true,
+			stdio = "default",
 		})
 		return nil
 	end, debug.traceback)
@@ -52,9 +52,19 @@ local function runTaskAsync(
 	end
 
 	if output and output ~= "" then
-		local parseOk, result = pcall(json.deserialize, output)
-		if parseOk then
-			return result
+		local lastLine
+		for line in output:gmatch("[^\n]+") do
+			if line:match("%S") then
+				lastLine = line
+			end
+		end
+
+		if lastLine then
+			local parseOk, result = pcall(json.deserialize, lastLine)
+			if parseOk then
+				return result
+			end
+			return lastLine
 		end
 	end
 

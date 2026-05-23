@@ -48,7 +48,7 @@ local function getFlipbookRbxmAsync(): string
 	local release = getReleaseAsync()
 	local downloadUrl = findAssetDownloadUrl(release)
 
-	print(`Downloading {RBXM_ASSET_NAME} from {GITHUB_REPO} release {release.tag_name}...`)
+	print(`Downloading Flipbook {release.tag_name} from {GITHUB_REPO} releases...`)
 
 	local response = net.request(downloadUrl, {
 		method = "GET",
