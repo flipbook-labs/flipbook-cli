@@ -21,7 +21,7 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function fetchRelease(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+local function getReleaseAsync(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
 	local url = `https://api.github.com/repos/{GITHUB_REPO}/releases/latest`
 	local response = net.request(url, {
 		method = "GET",
@@ -44,8 +44,8 @@ local function findAssetDownloadUrl(release: any): string
 	error(`release {release.tag_name} has no asset named "{RBXM_ASSET_NAME}"`)
 end
 
-local function fetchFlipbookRbxm(): string
-	local release = fetchRelease()
+local function getFlipbookRbxmAsync(): string
+	local release = getReleaseAsync()
 	local downloadUrl = findAssetDownloadUrl(release)
 
 	print(`Downloading {RBXM_ASSET_NAME} from {GITHUB_REPO} release {release.tag_name}...`)
@@ -65,4 +65,4 @@ local function fetchFlipbookRbxm(): string
 	return flipbookRbxmPath
 end
 
-return fetchFlipbookRbxm
+return getFlipbookRbxmAsync
