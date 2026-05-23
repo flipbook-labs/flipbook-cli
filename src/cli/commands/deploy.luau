@@ -66,6 +66,7 @@ local function run(args: { string })
 
 	local flipbookRbxmPath = getFlipbookRbxmAsync()
 
+	print("Building rbxl for deployment...")
 	local outputRbxlPath = rojoBuild({
 		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
 		project = {
