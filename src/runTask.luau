@@ -10,9 +10,9 @@ local run = FlipbookBatteries.run
 
 local function runTask(
 	script: string,
-	globals: { [string]: string | number },
-	universeId: string,
-	placeId: string,
+	globals: { [string]: string | number | boolean },
+	universeId: number,
+	placeId: number?,
 	apiKey: string
 ): any
 	local parts = {}
@@ -23,19 +23,23 @@ local function runTask(
 	local scriptPath = tostring(path.join(system.tmpdir(), `flipbook-task-{os.time()}.luau`))
 	fs.writeStringToFile(scriptPath, script)
 
+	local cliArgs = {
+		"run",
+		"--script",
+		scriptPath,
+		"--universeId",
+		universeId,
+	}
+	if placeId then
+		table.insert(cliArgs, "--placeId")
+		table.insert(cliArgs, placeId)
+	end
+	table.insert(cliArgs, "--lua.globals")
+	table.insert(cliArgs, table.concat(parts, ","))
+
 	local output
 	local ok, err = pcall(function()
-		output = run(config.rocaleCmd, {
-			"run",
-			"--script",
-			scriptPath,
-			"--universeId",
-			universeId,
-			"--placeId",
-			placeId,
-			"--lua.globals",
-			table.concat(parts, ","),
-		}, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
+		output = run(config.rocaleCmd, cliArgs :: { any }, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
 	end)
 
 	fs.remove(scriptPath)
