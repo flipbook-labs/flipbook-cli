@@ -3,7 +3,6 @@ local HttpService = game:GetService("HttpService")
 local AssetService = game:GetService("AssetService")
 
 local DESIRED_NAME = assert(_G.DESIRED_NAME, "DESIRED_NAME global is required")
-local TEMPLATE_PLACE_ID = assert(tonumber(_G.TEMPLATE_PLACE_ID), "TEMPLATE_PLACE_ID global is required")
 
 local function findPlaceByName(name: string): number?
 	local pages = AssetService:GetGamePlacesAsync()
@@ -29,7 +28,7 @@ end
 
 local placeId = AssetService:CreatePlaceAsync(
 	DESIRED_NAME,
-	TEMPLATE_PLACE_ID,
+	game.PlaceId,
 	"Flipbook storybook preview"
 )
 
