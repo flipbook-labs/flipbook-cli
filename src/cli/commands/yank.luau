@@ -5,8 +5,8 @@ local process = require("@std/process")
 local types = require("@root/cli/types")
 
 local getTempDir = require("@root/getTempDir")
-local publishPlace = require("@root/publishPlace")
-local resolvePlaceId = require("@root/resolvePlaceId")
+local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
+local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 
 export type YankOptions = {
@@ -56,7 +56,7 @@ local function run(args: { string })
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
 	local placeId = tonumber(parser:get("place-id"))
 
-	local allocatedPlaceId = resolvePlaceId(placeName, apiKey, {
+	local allocatedPlaceId = resolvePlaceIdAsync(placeName, apiKey, {
 		universeId = universeId,
 		placeId = placeId,
 	})
@@ -71,7 +71,7 @@ local function run(args: { string })
 		},
 	})
 
-	publishPlace(universeId, allocatedPlaceId, emptyPlacePath, apiKey)
+	publishPlaceAsync(universeId, allocatedPlaceId, emptyPlacePath, apiKey)
 	print(`Yanked storybook "{placeName}" (published empty place {allocatedPlaceId})`)
 end
 
