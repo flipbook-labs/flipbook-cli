@@ -30,6 +30,9 @@ https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
 
 trim = true
 
+[bump]
+initial_tag = "v0.1.0"
+
 [git]
 conventional_commits = false
 filter_unconventional = false
@@ -37,6 +40,14 @@ split_commits = false
 tag_pattern = "v[0-9].*"
 sort_commits = "newest"
 
+commit_preprocessors = [
+  { pattern = '(?s)\nCo-authored-by:.*$', replace = "" },
+  { pattern = '(?s)\nMade-with:.*$', replace = "" },
+  { pattern = '(?s)\n\n.*$', replace = "" },
+  { pattern = '(?s)\s+$', replace = "" },
+]
+
 commit_parsers = [
+  { message = "^Publish v", skip = true },
   { message = ".*", group = "Changes" },
 ]
