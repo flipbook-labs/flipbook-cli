@@ -1,7 +1,26 @@
 local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
+local system = require("@lute/system")
 local project = require("@repo/project")
+
+local function copyDirectoryRecursive(src: string, dst: string)
+	if fs.exists(dst) then
+		fs.remove(dst)
+	end
+	if string.lower(system.os) == "windows_nt" then
+		process.run({
+			"powershell",
+			"-NoProfile",
+			"-Command",
+			`Copy-Item -LiteralPath '{src}' -Destination '{dst}' -Recurse -Force`,
+		}, {
+			stdio = "inherit",
+		})
+	else
+		process.run({ "cp", "-r", src, dst }, { stdio = "inherit" })
+	end
+end
 
 local storeDir = path.join(process.homedir(), ".loom/store")
 local packagesDir = path.resolve("packages")
@@ -26,12 +45,17 @@ for packageId in lock.packages do
 	local src = path.join(storeDir, packageId)
 	local dst = path.join(packagesDir, packageId)
 	if not fs.exists(dst) then
-		process.run({ "cp", "-r", tostring(src), tostring(dst) }, { stdio = "inherit" })
+		copyDirectoryRecursive(tostring(src), tostring(dst))
 	end
 end
 
-if fs.exists(project.BUILD_OUTPUT) then
-	fs.remove(project.BUILD_OUTPUT)
+local outputPath = tostring(project.BUILD_OUTPUT)
+if string.lower(system.os) == "windows_nt" then
+	outputPath = outputPath .. ".exe"
+end
+
+if fs.exists(outputPath) then
+	fs.remove(outputPath)
 end
 
 if not fs.exists(project.BUILD_PATH) then
@@ -43,7 +67,7 @@ process.run({
 	"compile",
 	"cli.luau",
 	"--output",
-	tostring(project.BUILD_OUTPUT),
+	outputPath,
 	"--bundle-stats",
 	"--show-require-graph",
 }, {
