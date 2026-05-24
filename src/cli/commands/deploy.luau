@@ -4,9 +4,10 @@ local path = require("@std/path")
 local process = require("@std/process")
 
 local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
+local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
 local getTempDir = require("@root/getTempDir")
+local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
-local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -34,6 +35,9 @@ parser:add("stories", "option", {
 parser:add("place-id", "option", {
 	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
+parser:add("flipbook-rbxm", "option", {
+	help = "Optional path to the Flipbook plugin to use as the runtime. When omitted, the latest version from GitHub is used.",
+})
 parser:add("dry-run", "option", {
 	help = "Skip any steps that would make changes to the live Roblox experience.",
 })
@@ -41,19 +45,7 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-export type DeployOptions = {
-	placeName: string,
-	apiKey: string,
-	storiesPath: path.Pathlike,
-	universeId: string,
-
-	placeId: string?,
-	dryRun: string?,
-}
-
-local function run(args: { string })
-	parser:parse(args)
-
+local function run()
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
@@ -73,15 +65,21 @@ local function run(args: { string })
 	local dryRun = parser:get("dry-run")
 	local placeId = tonumber(parser:get("place-id"))
 
-	local flipbookRbxmPath = getFlipbookRbxmAsync()
+	local flipbookRbxmPath = if parser:get("flipbook-rbxm") then parser:get("flipbook-rbxm") else getFlipbookRbxmAsync()
 
+	print("Building rbxl for deployment...")
 	local outputRbxlPath = rojoBuild({
-		output = path.join(getTempDir(), `deploy-{placeName}.rbxl`),
+		output = path.join(getTempDir(), `deploy-{os.time()}.rbxl`),
 		project = {
 			name = placeName,
 			emitLegacyScripts = false,
 			tree = {
 				["$className"] = "DataModel",
+				Players = {
+					["$properties"] = {
+						CharacterAutoLoads = false,
+					},
+				},
 				ReplicatedStorage = {
 					Flipbook = {
 						["$path"] = flipbookRbxmPath,
@@ -94,18 +92,24 @@ local function run(args: { string })
 		},
 	})
 
+	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
+
+	local allocatedPlaceId = if placeId
+		then placeId
+		else getOrCreatePlaceByNameAsync(universeId, placeName, {
+			apiKey = apiKey,
+			universeId = universeId,
+			placeId = startPlaceId,
+		})
+
 	if dryRun then
 		return
 	end
 
-	local allocatedPlaceId, created = resolvePlaceIdAsync(placeName, apiKey, {
-		universeId = universeId,
-		placeId = placeId,
-	})
 	publishPlaceAsync(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
 
-	print(`Published storybook "{placeName}" to place {allocatedPlaceId} (created={created})`)
-	print("Play: " .. storybookPreviewUrl(allocatedPlaceId))
+	print(`Published storybook "{placeName}" to place {allocatedPlaceId})`)
+	print("Play: " .. storybookPreviewUrl(startPlaceId, allocatedPlaceId))
 end
 
 local command: types.Command = {

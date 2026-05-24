@@ -8,7 +8,7 @@ local yankCommand = require("@root/cli/commands/yank")
 local title = "help"
 local summary = "Show this help message"
 
-local function run(_args: { string })
+local function run()
 	helpText.printRoot({
 		title = "flipbook-cli",
 		summary = "Deploy Flipbook storybook experiences via Open Cloud.",
