@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     tags: ["v*.*.*"]
+  # TODO: remove before merge — temporary so this PR can exercise prepare-release-pr
   pull_request:
     branches: [main]
     paths:
@@ -121,7 +122,7 @@ jobs:
       contents: write
       pull-requests: write
     concurrency:
-      group: release-pr-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+      group: release-pr-${{ github.ref }}
       cancel-in-progress: true
     outputs:
       next_version: ${{ steps.version.outputs.next_version }}
@@ -152,35 +153,7 @@ jobs:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Preview publish PR (pull request debug)
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          echo "Release version: ${{ steps.version.outputs.next_version }}"
-          echo "Debug release branch: release/v${{ steps.version.outputs.next_version }}-debug-pr${{ github.event.pull_request.number }}"
-          echo "--- CHANGELOG.md diff ---"
-          git diff -- CHANGELOG.md || true
-
-      - name: Create or update publish PR (debug)
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          base: main
-          branch: release/v${{ steps.version.outputs.next_version }}-debug-pr${{ github.event.pull_request.number }}
-          title: "[debug] Publish v${{ steps.version.outputs.next_version }} (PR #${{ github.event.pull_request.number }})"
-          commit-message: "Publish v${{ steps.version.outputs.next_version }}"
-          draft: true
-          body: |
-            Debug release PR from workflow run on #${{ github.event.pull_request.number }}.
-
-            This is a **draft** PR for testing release automation. Close it after debugging.
-
-            A real publish PR is only opened from pushes to `main`.
-          add-paths: |
-            CHANGELOG.md
-
       - name: Create or update publish PR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peter-evans/create-pull-request@v7
         with:
           base: main
