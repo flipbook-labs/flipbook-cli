@@ -75,6 +75,11 @@ local function run()
 			emitLegacyScripts = false,
 			tree = {
 				["$className"] = "DataModel",
+				Players = {
+					["$properties"] = {
+						CharacterAutoLoads = false,
+					},
+				},
 				ReplicatedStorage = {
 					Flipbook = {
 						["$path"] = flipbookRbxmPath,
