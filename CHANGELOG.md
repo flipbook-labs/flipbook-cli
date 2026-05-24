@@ -3,9 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.1.0 - 2026-05-24
 
 ### Changes
+
+- Merge 924fd2ea7e0a830a66533c6b501626ec16163211 into 5dffa3e4cfb792e0874e105918887de13fcff8ce ([488ffe4](https://github.com/flipbook-labs/flipbook-cli/commit/488ffe4a14e9c76b79afffe0b9d1bf8c4dd5799b))
+
+- Fix create-pull-request on detached PR checkouts. ([924fd2e](https://github.com/flipbook-labs/flipbook-cli/commit/924fd2ea7e0a830a66533c6b501626ec16163211))
+
+- Fix release workflow and add PR debug runs. ([061e49e](https://github.com/flipbook-labs/flipbook-cli/commit/061e49e38251227508279a4431e6cd1c192c6a2b))
+
+- [bot] Publish v0.0.1 (#15) ([5dffa3e](https://github.com/flipbook-labs/flipbook-cli/commit/5dffa3e4cfb792e0874e105918887de13fcff8ce))
 
 - Fix the PR release creation workflow (#14) ([075cccd](https://github.com/flipbook-labs/flipbook-cli/commit/075cccde28b55a10d58aa788b93f5204b47d6420))
 
