@@ -90,10 +90,10 @@ local function run(args: { string })
 
 	local allocatedPlaceId = if placeId
 		then placeId
-		else getOrCreatePlaceByNameAsync(placeName, {
+		else getOrCreatePlaceByNameAsync(universeId, placeName, {
 			apiKey = apiKey,
 			universeId = universeId,
-			placeId = startPlace,
+			placeId = startPlaceId,
 		})
 
 	if dryRun then
