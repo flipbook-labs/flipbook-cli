@@ -5,42 +5,45 @@ local path = require("@std/path")
 local system = require("@std/system")
 
 local config = require("@root/config")
+local types = require("@root/types")
 
 local run = FlipbookBatteries.run
+
+type LuauExecutionContext = types.LuauExecutionContext
 
 local function runTaskAsync(
 	script: string,
 	globals: { [string]: string | number | boolean },
-	universeId: number,
-	placeId: number?,
-	apiKey: string
-): any
+	luauExecutionContext: LuauExecutionContext
+): unknown
 	local parts = {}
 	for key, value in globals do
-		table.insert(parts, key .. "=" .. tostring(value))
+		table.insert(parts, `{key}="{value}"`)
 	end
 
 	local scriptPath = tostring(path.join(system.tmpdir(), `flipbook-task-{os.time()}.luau`))
 	fs.writeStringToFile(scriptPath, script)
 
-	local cliArgs = {
-		"run",
-		"--script",
-		scriptPath,
-		"--universeId",
-		universeId,
-	}
-	if placeId then
-		table.insert(cliArgs, "--placeId")
-		table.insert(cliArgs, placeId)
-	end
-	table.insert(cliArgs, "--lua.globals")
-	table.insert(cliArgs, table.concat(parts, ","))
-
 	local output
-	local ok, err = pcall(function()
-		output = run(config.rocaleCmd, cliArgs :: { any }, { env = { ROBLOX_API_KEY = apiKey }, captureOutput = true })
-	end)
+	local ok, err = xpcall(function()
+		output = run(config.rocaleCmd, {
+			"run",
+			"--script",
+			scriptPath,
+			"--universeId",
+			luauExecutionContext.universeId,
+			"--placeId",
+			luauExecutionContext.placeId,
+			"--lua.globals",
+			table.concat(parts, ","),
+		}, {
+			env = {
+				ROBLOX_API_KEY = luauExecutionContext.apiKey,
+			},
+			stdio = "default",
+		})
+		return nil
+	end, debug.traceback)
 
 	fs.remove(scriptPath)
 
@@ -49,9 +52,19 @@ local function runTaskAsync(
 	end
 
 	if output and output ~= "" then
-		local parseOk, result = pcall(json.deserialize, output)
-		if parseOk then
-			return result
+		local lastLine
+		for line in output:gmatch("[^\n]+") do
+			if line:match("%S") then
+				lastLine = line
+			end
+		end
+
+		if lastLine then
+			local parseOk, result = pcall(json.deserialize, lastLine)
+			if parseOk then
+				return result
+			end
+			return lastLine
 		end
 	end
 

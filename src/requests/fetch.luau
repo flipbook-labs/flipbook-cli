@@ -22,20 +22,28 @@ local function fetch(url: string, options: FetchOptions)
 		body = options.body,
 	})
 
-	if res.ok then
-		return res
-	else
-		-- FIXME: Narrow the return value of `json.deserialize` instead of
-		-- casting to `any`
-		local body: any = json.deserialize(res.body)
+	local parseOk, bodyAsJson = pcall(json.deserialize, res.body)
 
+	if res.ok then
+		if parseOk and bodyAsJson ~= nil then
+			return bodyAsJson
+		else
+			return res.body
+		end
+	else
 		local problems: { string } = {}
-		if body.errors then
-			for _, err in body.errors do
-				table.insert(problems, err.message :: string)
+
+		if parseOk then
+			local body = json.asObject(bodyAsJson)
+			if body then
+				if body.errors then
+					for _, err in body.errors do
+						table.insert(problems, err.message :: string)
+					end
+				elseif body.message then
+					table.insert(problems, body.message :: string)
+				end
 			end
-		elseif body.message then
-			table.insert(problems, body.message :: string)
 		end
 
 		error(

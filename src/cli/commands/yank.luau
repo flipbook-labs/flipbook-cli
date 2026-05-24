@@ -4,9 +4,9 @@ local process = require("@std/process")
 
 local types = require("@root/cli/types")
 
+local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
 local getTempDir = require("@root/getTempDir")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
-local resolvePlaceIdAsync = require("@root/requests/resolvePlaceIdAsync")
 local rojoBuild = require("@root/rojo/rojoBuild")
 
 export type YankOptions = {
@@ -43,9 +43,7 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function run(args: { string })
-	parser:parse(args)
-
+local function run()
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
@@ -54,9 +52,11 @@ local function run(args: { string })
 	local placeName = parser:get("place-name") :: string
 	local universeIdStr = parser:get("universe-id")
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
-	local placeId = tonumber(parser:get("place-id"))
+	local placeId =
+		assert(tonumber(parser:get("place-id")), `--place-id must be a number, got "{parser:get("place-id")}"`)
 
-	local allocatedPlaceId = resolvePlaceIdAsync(placeName, apiKey, {
+	local allocatedPlaceId = getOrCreatePlaceByNameAsync(universeId, placeName, {
+		apiKey = apiKey,
 		universeId = universeId,
 		placeId = placeId,
 	})

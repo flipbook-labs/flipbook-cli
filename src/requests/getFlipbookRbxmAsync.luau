@@ -1,5 +1,4 @@
 local fs = require("@std/fs")
-local json = require("@std/json")
 local path = require("@std/path")
 
 local fetch = require("@root/requests/fetch")
@@ -11,11 +10,9 @@ local GITHUB_REPO = "flipbook-labs/flipbook"
 local RBXM_ASSET_NAME = "Flipbook.rbxm"
 
 local function getReleaseAsync(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
-	local res = fetch(`https://api.github.com/repos/{GITHUB_REPO}/releases/latest`, {
+	return fetch(`https://api.github.com/repos/{GITHUB_REPO}/releases/latest`, {
 		headers = githubHeaders(),
-	})
-
-	return json.deserialize(res.body) :: any
+	}) :: any
 end
 
 local function findAssetDownloadUrl(release: any): string
@@ -31,14 +28,14 @@ local function getFlipbookRbxmAsync(): string
 	local release = getReleaseAsync()
 	local downloadUrl = findAssetDownloadUrl(release)
 
-	logging.info(`Downloading {RBXM_ASSET_NAME} from {GITHUB_REPO} release {release.tag_name}...`)
+	logging.info(`Downloading Flipbook {release.tag_name} from {GITHUB_REPO} releases...`)
 
-	local res = fetch(downloadUrl, {
+	local rbxmContent = fetch(downloadUrl, {
 		headers = githubHeaders(),
 	})
 
 	local flipbookRbxmPath = tostring(path.join(getTempDir(), "Flipbook.rbxm"))
-	fs.writeStringToFile(flipbookRbxmPath, res.body)
+	fs.writeStringToFile(flipbookRbxmPath, rbxmContent)
 
 	return flipbookRbxmPath
 end

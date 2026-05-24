@@ -14,12 +14,11 @@ local function syncPrCommentAsync(
 	local headers = githubHeaders(githubToken)
 	headers["Content-Type"] = "application/json"
 
-	local listRes = fetch(
+	local comments = fetch(
 		`https://api.github.com/repos/{repo}/issues/{prNumber}/comments?per_page=100`,
 		{ headers = headers }
-	)
+	) :: any
 
-	local comments = json.deserialize(listRes.body) :: any
 	local existingId: number? = nil
 	for _, c in comments do
 		if (c.body :: string):find(PR_COMMENT_MARKER, 1, true) then
