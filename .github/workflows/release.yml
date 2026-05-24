@@ -153,11 +153,23 @@ jobs:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
+      - name: Close superseded versioned publish PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr list --repo "${{ github.repository }}" --state open \
+            --json number,headRefName,title \
+            --jq '.[] | select(.headRefName != "publish-next-version") | select(.title | test("^\\[bot\\] Publish v")) | .number' \
+          | while read -r pr; do
+              [ -n "$pr" ] && gh pr close "$pr" --delete-branch \
+                --comment "Superseded: publish PRs use the publish-next-version branch."
+            done
+
       - name: Create or update publish PR
         uses: peter-evans/create-pull-request@v7
         with:
           base: main
-          branch: release/v${{ steps.version.outputs.next_version }}
+          branch: publish-next-version
           title: "[bot] Publish v${{ steps.version.outputs.next_version }}"
           commit-message: "Publish v${{ steps.version.outputs.next_version }}"
           body: |
@@ -178,6 +190,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -207,6 +220,15 @@ jobs:
             --notes-file CHANGELOG.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Close publish PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="$(gh pr list --repo "${{ github.repository }}" --head publish-next-version --base main --state open --json number -q '.[0].number // empty')"
+          if [ -n "$pr_number" ]; then
+            gh pr close "$pr_number" --delete-branch
+          fi
 
   build:
     name: build - ${{ matrix.os }}
