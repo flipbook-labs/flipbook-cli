@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: Build - ${{ matrix.os }}
+    name: build - ${{ matrix.os }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
@@ -50,7 +50,7 @@ jobs:
           path: ${{ matrix.artifact_path }}
 
   attach-assets:
-    name: Attach binaries to draft release
+    name: attach assets
     if: |
       (github.event_name == 'release' && github.event.release.draft) ||
       github.event_name == 'workflow_dispatch'
