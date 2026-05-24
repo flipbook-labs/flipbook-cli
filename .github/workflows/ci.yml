@@ -6,6 +6,22 @@ on:
   pull_request:
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: CompeyDev/setup-rokit@v0.2.1
+        with:
+          version: v1.2.0
+
+      - name: Install depenendencies and build
+        run: lute run build
+
+      - name: Build flipbook-cli
+        run: lute run build
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10

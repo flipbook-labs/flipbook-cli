@@ -13,9 +13,35 @@ on:
         required: true
 
 jobs:
+  prepare-packages:
+    name: prepare packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.sha }}
+
+      - uses: CompeyDev/setup-rokit@v0.2.1
+        with:
+          version: v1.2.0
+
+      - name: Install Loom packages
+        run: lute run build
+        env:
+          LOOM_STAGE_ONLY: "1"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: loom-packages
+          path: |
+            packages/
+            loom.lock.luau
+
   build:
     name: build - ${{ matrix.os }}
     runs-on: ${{ matrix.runner }}
+    needs: prepare-packages
     timeout-minutes: 10
     strategy:
       matrix:
@@ -37,12 +63,19 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag || github.sha }}
 
+      - uses: actions/download-artifact@v5
+        with:
+          name: loom-packages
+          path: .
+
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
 
       - name: Build flipbook-cli
         run: lute run build
+        env:
+          SKIP_LOOM_INSTALL: "1"
 
       - uses: actions/upload-artifact@v5
         with:

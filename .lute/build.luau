@@ -29,13 +29,16 @@ if not fs.exists(packagesDir) then
 	fs.createDirectory(packagesDir)
 end
 
-process.run({
-	"lute",
-	"pkg",
-	"install",
-}, {
-	stdio = "inherit",
-})
+local skipLoomInstall = process.env.SKIP_LOOM_INSTALL == "1"
+if not skipLoomInstall then
+	process.run({
+		"lute",
+		"pkg",
+		"install",
+	}, {
+		stdio = "inherit",
+	})
+end
 
 local lock = require("@repo/loom.lock")
 
@@ -60,6 +63,10 @@ end
 
 if not fs.exists(project.BUILD_PATH) then
 	fs.createDirectory(project.BUILD_PATH, { makeParents = true })
+end
+
+if process.env.LOOM_STAGE_ONLY == "1" then
+	return
 end
 
 process.run({
