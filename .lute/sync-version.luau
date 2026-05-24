@@ -1,21 +1,22 @@
+local cli = require("@batteries/cli")
 local args = { ... }
-
-local nextVersion = args[2] or args[1]
-if type(nextVersion) ~= "string" or nextVersion == "" then
-	error("expected version argument, e.g. lute run sync-version 0.1.1")
-end
 
 local fs = require("@std/fs")
 local path = require("@std/path")
 
-local configPath = path.resolve("loom.config.luau")
-local configFile = fs.open(configPath, "r")
-if configFile == nil then
-	error("failed to open loom.config.luau")
-end
+local parser = cli.parser()
+parser:add("version", "option", {
+	help = "Version to write into loom.config.luau",
+	required = true,
+})
+parser:parse(args)
 
-local content = fs.read(configFile)
-fs.close(configFile)
+local nextVersion = parser:get("version")
+assert(nextVersion and nextVersion ~= "", "expected --version, e.g. lute run sync-version --version 0.1.1")
+
+local configPath = path.resolve("loom.config.luau")
+local content = fs.readFileToString(configPath)
+assert(content, "failed to read loom.config.luau")
 
 local updated, replacements = string.gsub(content, 'version = "[^"]+"', string.format('version = "%s"', nextVersion), 1)
 if replacements ~= 1 then
