@@ -35,6 +35,9 @@ parser:add("stories", "option", {
 parser:add("place-id", "option", {
 	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
+parser:add("flipbook-rbxm", "option", {
+	help = "Optional path to the Flipbook plugin to use as the runtime. When omitted, the latest version from GitHub is used.",
+})
 parser:add("dry-run", "option", {
 	help = "Skip any steps that would make changes to the live Roblox experience.",
 })
@@ -62,7 +65,7 @@ local function run()
 	local dryRun = parser:get("dry-run")
 	local placeId = tonumber(parser:get("place-id"))
 
-	local flipbookRbxmPath = getFlipbookRbxmAsync()
+	local flipbookRbxmPath = if parser:get("flipbook-rbxm") then parser:get("flipbook-rbxm") else getFlipbookRbxmAsync()
 
 	print("Building rbxl for deployment...")
 	local outputRbxlPath = rojoBuild({
@@ -84,7 +87,7 @@ local function run()
 		},
 	})
 
-	local startPlace = getUniverseStartPlaceAsync(universeId, apiKey)
+	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
 
 	local allocatedPlaceId = if placeId
 		then placeId
@@ -101,7 +104,7 @@ local function run()
 	publishPlaceAsync(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
 
 	print(`Published storybook "{placeName}" to place {allocatedPlaceId})`)
-	print("Play: " .. storybookPreviewUrl(allocatedPlaceId))
+	print("Play: " .. storybookPreviewUrl(startPlaceId, allocatedPlaceId))
 end
 
 local command: types.Command = {
