@@ -3,15 +3,19 @@ name: Release
 on:
   push:
     branches: [main]
+    tags: ["v*.*.*"]
   pull_request:
-  # Draft releases can receive assets before publish; immutable releases lock assets only after publish.
-  release:
-    types: [created]
+  # Draft releases do not trigger `release` created/edited workflows (GitHub Actions docs).
+  # After saving a draft in the UI, push the tag or run this workflow manually.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the draft release to attach binaries to (e.g. v0.1.0)
+        required: true
 
 jobs:
   build:
     name: build - ${{ matrix.os }}
-    if: github.event_name != 'release' || github.event.release.draft
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
@@ -32,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_type == 'tag' && github.ref_name || github.sha }}
 
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
@@ -47,7 +51,7 @@ jobs:
           path: ${{ matrix.artifact_path }}
 
   attach-assets:
-    if: github.event_name == 'release' && github.event.release.draft
+    if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -66,7 +70,7 @@ jobs:
 
       - name: Upload assets to draft release
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" \
+          gh release upload "${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" \
             flipbook-cli-macos-arm64.zip \
             flipbook-cli-linux-x86_64.zip \
             flipbook-cli-windows-x86_64.zip \
