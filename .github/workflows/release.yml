@@ -3,8 +3,14 @@ name: Release
 on:
   push:
     branches: [main]
-    tags: ["v*.*.*"]
   pull_request:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (a draft release for this tag must already exist)
+        required: true
 
 jobs:
   build:
@@ -28,6 +34,8 @@ jobs:
             artifact_path: build/flipbook-cli.exe
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.sha }}
 
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
@@ -41,13 +49,18 @@ jobs:
           name: flipbook-cli-${{ matrix.os }}-${{ matrix.arch }}
           path: ${{ matrix.artifact_path }}
 
-  release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+  attach-assets:
+    name: Attach binaries to draft release
+    if: |
+      (github.event_name == 'release' && github.event.release.draft) ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/download-artifact@v5
         with:
@@ -59,42 +72,12 @@ jobs:
           zip -rj flipbook-cli-linux-x86_64.zip ./artifacts/flipbook-cli-linux-x86_64/*
           zip -rj flipbook-cli-windows-x86_64.zip ./artifacts/flipbook-cli-windows-x86_64/*
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          draft: true
+      - name: Upload assets to draft release
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            flipbook-cli-macos-arm64.zip \
+            flipbook-cli-linux-x86_64.zip \
+            flipbook-cli-windows-x86_64.zip \
+            --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS artifact
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: flipbook-cli-macos-arm64.zip
-          asset_name: flipbook-cli-macos-arm64.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux artifact
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: flipbook-cli-linux-x86_64.zip
-          asset_name: flipbook-cli-linux-x86_64.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows artifact
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: flipbook-cli-windows-x86_64.zip
-          asset_name: flipbook-cli-windows-x86_64.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
