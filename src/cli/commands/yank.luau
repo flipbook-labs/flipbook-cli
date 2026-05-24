@@ -52,9 +52,10 @@ local function run()
 	local placeName = parser:get("place-name") :: string
 	local universeIdStr = parser:get("universe-id")
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
-	local placeId = tonumber(parser:get("place-id"))
+	local placeId =
+		assert(tonumber(parser:get("place-id")), `--place-id must be a number, got "{parser:get("place-id")}"`)
 
-	local allocatedPlaceId = getOrCreatePlaceByNameAsync(placeName, {
+	local allocatedPlaceId = getOrCreatePlaceByNameAsync(universeId, placeName, {
 		apiKey = apiKey,
 		universeId = universeId,
 		placeId = placeId,
