@@ -5,10 +5,25 @@ on:
     branches: [main]
     tags: ["v*.*.*"]
   pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/release.yml"
+      - "cliff.toml"
+      - "loom.config.luau"
+      - "CHANGELOG.md"
+      - ".lute/bump-version.luau"
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: Publish release from current main (tag + draft release from loom.config version)
+        type: boolean
+        default: false
 
 jobs:
   detect-changes:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -21,6 +36,11 @@ jobs:
       - name: Detect changes since latest release tag
         id: detect
         run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           latest_tag="$(git tag --list "v*" --sort=-version:refname | sed -n '1p')"
           if [ -z "$latest_tag" ]; then
             commit_count="$(git rev-list --count HEAD)"
@@ -34,16 +54,74 @@ jobs:
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
+  check-publish:
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should_publish: ${{ steps.detect.outputs.should_publish }}
+      version: ${{ steps.detect.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect publish release
+        id: detect
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "version=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          commit_subject="$(git log -1 --pretty=%s HEAD)"
+          changed_files="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+
+          is_publish=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_publish }}" = "true" ]; then
+            is_publish=true
+          elif echo "$commit_subject" | grep -qE '\[bot\] Publish v[0-9]+(\.[0-9]+)*'; then
+            is_publish=true
+          elif echo "$changed_files" | grep -qx 'CHANGELOG.md' \
+              && echo "$commit_subject" | grep -qiE 'publish v[0-9]+(\.[0-9]+)*'; then
+            is_publish=true
+          fi
+
+          if [ "$is_publish" = true ]; then
+            version="$(sed -n '/package = {/,/^	},/{
+              s/^\t\tversion = "\([^"]*\)".*/\1/p
+            }' loom.config.luau | head -1)"
+            if [ -z "$version" ]; then
+              echo "Could not read version from loom.config.luau" >&2
+              exit 1
+            fi
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "version=" >> "$GITHUB_OUTPUT"
+          fi
+
   prepare-release-pr:
-    needs: detect-changes
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.has_changes == 'true'
+    needs: [detect-changes, check-publish]
+    if: |
+      needs.detect-changes.outputs.has_changes == 'true' && (
+        (github.event_name == 'pull_request') ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check-publish.outputs.should_publish != 'true')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
     concurrency:
-      group: release-pr-${{ github.ref }}
+      group: release-pr-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
       cancel-in-progress: true
     outputs:
       next_version: ${{ steps.version.outputs.next_version }}
@@ -59,30 +137,56 @@ jobs:
       - name: Install dependencies
         run: lute run install
 
+      - name: Read package version to release
+        id: version
+        run: |
+          set -euo pipefail
+          package_version="$(sed -n '/package = {/,/^	},/{
+            s/^\t\tversion = "\([^"]*\)".*/\1/p
+          }' loom.config.luau | head -1)"
+          if [ -z "$package_version" ]; then
+            echo "Could not read package version from loom.config.luau" >&2
+            exit 1
+          fi
+          echo "next_version=$package_version" >> "$GITHUB_OUTPUT"
+
       - uses: orhun/git-cliff-action@v4
         id: cliff
         with:
           config: cliff.toml
-          args: --unreleased
+          args: --tag v${{ steps.version.outputs.next_version }}
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Determine next version
-        id: version
+      - name: Preview publish PR (pull request debug)
+        if: github.event_name == 'pull_request'
         run: |
-          next_version="$(git cliff --bumped-version 2>/dev/null || true)"
-          next_version="${next_version#v}"
-          if [ -z "$next_version" ]; then
-            current_version="$(rg 'version = "([^"]+)"' loom.config.luau -o -r '$1' -N | sed -n '1p')"
-            next_version="$(echo "$current_version" | awk -F. '{ printf("%d.%d.%d", $1, $2, $3 + 1) }')"
-          fi
-          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          echo "Release version: ${{ steps.version.outputs.next_version }}"
+          echo "Debug release branch: release/v${{ steps.version.outputs.next_version }}-debug-pr${{ github.event.pull_request.number }}"
+          echo "--- CHANGELOG.md diff ---"
+          git diff -- CHANGELOG.md || true
 
-      - name: Bump package version
-        run: lute run bump-version --version "${{ steps.version.outputs.next_version }}"
+      - name: Create or update publish PR (debug)
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: release/v${{ steps.version.outputs.next_version }}-debug-pr${{ github.event.pull_request.number }}
+          title: "[debug] Publish v${{ steps.version.outputs.next_version }} (PR #${{ github.event.pull_request.number }})"
+          commit-message: "Publish v${{ steps.version.outputs.next_version }}"
+          draft: true
+          body: |
+            Debug release PR from workflow run on #${{ github.event.pull_request.number }}.
+
+            This is a **draft** PR for testing release automation. Close it after debugging.
+
+            A real publish PR is only opened from pushes to `main`.
+          add-paths: |
+            CHANGELOG.md
 
       - name: Create or update publish PR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peter-evans/create-pull-request@v7
         with:
           branch: release/v${{ steps.version.outputs.next_version }}
@@ -98,36 +202,10 @@ jobs:
             - attach release zip assets to that draft release
           add-paths: |
             CHANGELOG.md
-            loom.config.luau
-
-  check-publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      should_publish: ${{ steps.detect.outputs.should_publish }}
-      version: ${{ steps.detect.outputs.version }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Detect publish release
-        id: detect
-        run: |
-          changed_files="$(git diff-tree --no-commit-id --name-only -r HEAD)"
-          if echo "$changed_files" | rg -q '^CHANGELOG.md$' && echo "$changed_files" | rg -q '^loom.config.luau$'; then
-            version="$(rg 'version = "([^"]+)"' loom.config.luau -o -r '$1' -N | sed -n '1p')"
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            echo "version=" >> "$GITHUB_OUTPUT"
-          fi
 
   publish-release:
     needs: check-publish
-    if: needs.check-publish.outputs.should_publish == 'true'
+    if: github.event_name != 'pull_request' && needs.check-publish.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -164,6 +242,7 @@ jobs:
 
   build:
     name: build - ${{ matrix.os }}
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
