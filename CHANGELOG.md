@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changes
 
+- [bot] Publish v0.0.1 (#15) ([5dffa3e](https://github.com/flipbook-labs/flipbook-cli/commit/5dffa3e4cfb792e0874e105918887de13fcff8ce))
+
 - Fix the PR release creation workflow (#14) ([075cccd](https://github.com/flipbook-labs/flipbook-cli/commit/075cccde28b55a10d58aa788b93f5204b47d6420))
 
 - Add release PR automation with git-cliff (#12) ([c4b1851](https://github.com/flipbook-labs/flipbook-cli/commit/c4b1851ef228a0e9082ce621c896a76575b8de8f))
