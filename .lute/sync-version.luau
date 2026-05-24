@@ -16,16 +16,10 @@ assert(nextVersion and nextVersion ~= "", "expected --version, e.g. lute run syn
 
 local configPath = path.resolve("loom.config.luau")
 local content = fs.readFileToString(configPath)
-assert(content, "failed to read loom.config.luau")
 
 local updated, replacements = string.gsub(content, 'version = "[^"]+"', string.format('version = "%s"', nextVersion), 1)
 if replacements ~= 1 then
 	error("failed to update version in loom.config.luau")
 end
 
-local outputFile = fs.open(configPath, "w+")
-if outputFile == nil then
-	error("failed to open loom.config.luau for writing")
-end
-fs.write(outputFile, updated)
-fs.close(outputFile)
+fs.writeStringToFile(configPath, updated)
