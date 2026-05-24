@@ -42,9 +42,7 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function run(args: { string })
-	parser:parse(args)
-
+local function run()
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
