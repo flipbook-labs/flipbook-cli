@@ -16,8 +16,8 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install depenendencies and build
-        run: lute run build
+      - name: Install dependencies
+        run: lute run install
 
       - name: Build flipbook-cli
         run: lute run build
@@ -32,8 +32,8 @@ jobs:
         with:
           version: v1.2.0
 
-      - name: Install depenendencies and build
-        run: lute run build
+      - name: Install dependencies
+        run: lute run install
 
       - name: Test
         run: lute test
@@ -51,8 +51,8 @@ jobs:
       - name: Setup Lute typedefs
         run: lute setup
 
-      - name: Install depenendencies and build
-        run: lute run build
+      - name: Install dependencies
+        run: lute run install
 
       - name: Analyze
         run: lute run analyze
