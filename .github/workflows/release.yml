@@ -56,6 +56,9 @@ jobs:
         with:
           version: v1.2.0
 
+      - name: Install dependencies
+        run: lute run install
+
       - uses: orhun/git-cliff-action@v4
         id: cliff
         with:
@@ -184,6 +187,9 @@ jobs:
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
+
+      - name: Install dependencies
+        run: lute run install
 
       - name: Build flipbook-cli
         run: lute run build
