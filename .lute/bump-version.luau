@@ -6,7 +6,7 @@ local path = require("@std/path")
 
 local parser = cli.parser()
 parser:add("version", "option", {
-	help = "Version to write into loom.config.luau",
+	help = "Semver-compatible version string used as the next release number",
 	required = true,
 })
 parser:parse(args)
@@ -18,7 +18,7 @@ local content = fs.readFileToString(configPath)
 
 local updated, replacements = content:gsub('version = "[^"]+"', `version = "{nextVersion}"`, 1)
 if replacements ~= 1 then
-	error("failed to update version in loom.config.luau")
+	error("failed to update package version")
 end
 
 fs.writeStringToFile(configPath, updated)
