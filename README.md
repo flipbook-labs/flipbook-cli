@@ -74,3 +74,10 @@ flipbook-cli yank --name pr-42
 | `ROBLOX_STORYBOOK_PLACE_ID`    | Main place; Luau Execution host; `CreatePlaceAsync` template |
 | `GITHUB_TOKEN`                 | Optional; GitHub API auth for release fetch and `comment`    |
 | `GITHUB_REPOSITORY`            | For `comment`                                                |
+
+## Releasing
+
+1. Merge the generated release PR.
+2. Wait for the release workflow to attach release assets to the draft release.
+3. Review the draft release notes and assets in GitHub.
+4. Publish the release in GitHub.

@@ -2,16 +2,12 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags: ["v*.*.*"]
   pull_request:
-  # Draft releases can receive assets before publish; immutable releases lock assets only after publish.
-  release:
-    types: [created]
 
 jobs:
   build:
     name: build - ${{ matrix.os }}
-    if: github.event_name != 'release' || github.event.release.draft
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
@@ -25,14 +21,8 @@ jobs:
             arch: x86_64
             runner: ubuntu-latest
             artifact_path: build/flipbook-cli
-          - os: windows
-            arch: x86_64
-            runner: windows-latest
-            artifact_path: build/flipbook-cli.exe
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
 
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
@@ -47,7 +37,7 @@ jobs:
           path: ${{ matrix.artifact_path }}
 
   attach-assets:
-    if: github.event_name == 'release' && github.event.release.draft
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: build
@@ -62,14 +52,12 @@ jobs:
         run: |
           zip -rj flipbook-cli-macos-arm64.zip ./artifacts/flipbook-cli-macos-arm64/*
           zip -rj flipbook-cli-linux-x86_64.zip ./artifacts/flipbook-cli-linux-x86_64/*
-          zip -rj flipbook-cli-windows-x86_64.zip ./artifacts/flipbook-cli-windows-x86_64/*
 
       - name: Upload assets to draft release
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" \
+          gh release upload "${{ github.ref_name }}" \
             flipbook-cli-macos-arm64.zip \
             flipbook-cli-linux-x86_64.zip \
-            flipbook-cli-windows-x86_64.zip \
             --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
