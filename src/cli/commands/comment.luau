@@ -38,9 +38,7 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function run(args: { string })
-	parser:parse(args)
-
+local function run()
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local name = parser:get("name") or `pr-{prNumber}`
 	local githubToken = assert(
