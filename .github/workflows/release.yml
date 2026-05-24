@@ -130,13 +130,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: CompeyDev/setup-rokit@v0.2.1
-        with:
-          version: v1.2.0
-
-      - name: Install dependencies
-        run: lute run install
-
       - name: Read package version to release
         id: version
         run: |
@@ -172,6 +165,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: peter-evans/create-pull-request@v7
         with:
+          base: main
           branch: release/v${{ steps.version.outputs.next_version }}-debug-pr${{ github.event.pull_request.number }}
           title: "[debug] Publish v${{ steps.version.outputs.next_version }} (PR #${{ github.event.pull_request.number }})"
           commit-message: "Publish v${{ steps.version.outputs.next_version }}"
@@ -189,6 +183,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: peter-evans/create-pull-request@v7
         with:
+          base: main
           branch: release/v${{ steps.version.outputs.next_version }}
           title: "[bot] Publish v${{ steps.version.outputs.next_version }}"
           commit-message: "Publish v${{ steps.version.outputs.next_version }}"
@@ -242,7 +237,7 @@ jobs:
 
   build:
     name: build - ${{ matrix.os }}
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
