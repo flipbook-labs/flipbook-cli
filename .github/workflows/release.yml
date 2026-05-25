@@ -3,11 +3,10 @@ name: Release
 on:
   push:
     branches: [main]
-    tags: ["v*.*.*"]
   workflow_dispatch:
     inputs:
       force_publish:
-        description: Tag and create draft release from loom.config version on current main
+        description: Tag and create draft release from version on `main`
         type: boolean
         default: false
 
@@ -32,9 +31,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          version="$(sed -n '/package = {/,/^	},/{
-            s/^\t\tversion = "\([^"]*\)".*/\1/p
-          }' loom.config.luau | head -1)"
+          version="$(grep -m1 'version = "' loom.config.luau | sed 's/.*version = "\([^"]*\)".*/\1/')"
           if [ -z "$version" ]; then
             echo "Could not read package version from loom.config.luau" >&2
             exit 1
@@ -79,8 +76,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Create and push publish tag
         run: |
@@ -109,14 +104,12 @@ jobs:
 
   build:
     name: build (${{ matrix.os }})
-    needs: gate
-    if: |
-      always() && (
-        (needs.gate.result == 'success' && needs.gate.outputs.should_publish == 'true') ||
-        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-      )
+    needs: [gate, publish-release]
+    if: always()
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -124,14 +117,17 @@ jobs:
             arch: arm64
             runner: macos-latest
             artifact_path: build/flipbook-cli
+            zip_name: flipbook-cli-macos-arm64.zip
           - os: linux
             arch: x86_64
             runner: ubuntu-latest
             artifact_path: build/flipbook-cli
+            zip_name: flipbook-cli-linux-x86_64.zip
           - os: windows
             arch: x86_64
             runner: windows-latest
             artifact_path: build/flipbook-cli.exe
+            zip_name: flipbook-cli-windows-x86_64.zip
     steps:
       - uses: actions/checkout@v6
 
@@ -145,47 +141,22 @@ jobs:
       - name: Build flipbook-cli
         run: lute run build
 
-      - uses: actions/upload-artifact@v5
-        with:
-          name: flipbook-cli-${{ matrix.os }}-${{ matrix.arch }}
-          path: ${{ matrix.artifact_path }}
-
-  attach-assets:
-    needs: [gate, build, publish-release]
-    if: |
-      always() &&
-      needs.build.result == 'success' &&
-      (
-        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
-        (needs.gate.outputs.should_publish == 'true' && needs.publish-release.result == 'success')
-      )
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v5
-        with:
-          path: artifacts
-
-      - name: Zip release artifacts
+      - name: Attach binary to draft release
+        shell: bash
         run: |
-          zip -rj flipbook-cli-macos-arm64.zip ./artifacts/flipbook-cli-macos-arm64/*
-          zip -rj flipbook-cli-linux-x86_64.zip ./artifacts/flipbook-cli-linux-x86_64/*
-          zip -rj flipbook-cli-windows-x86_64.zip ./artifacts/flipbook-cli-windows-x86_64/*
+          set -euo pipefail
 
-      - name: Upload assets to draft release
-        run: |
-          if [ "${{ needs.gate.outputs.should_publish }}" = "true" ]; then
-            tag="v${{ needs.gate.outputs.version }}"
-          else
-            tag="${{ github.ref_name }}"
+          zip -j "${{ matrix.zip_name }}" "${{ matrix.artifact_path }}"
+
+          tag="v${{ needs.gate.outputs.version }}"
+
+          is_draft="$(gh release view "$tag" --json isDraft -q '.isDraft' 2>/dev/null || echo false)"
+          if [ "$is_draft" != "true" ]; then
+            echo "No draft release for $tag, skipping asset upload"
+            exit 0
           fi
-          gh release upload "$tag" \
-            flipbook-cli-macos-arm64.zip \
-            flipbook-cli-linux-x86_64.zip \
-            flipbook-cli-windows-x86_64.zip \
-            --clobber
+
+          gh release upload "$tag" "${{ matrix.zip_name }}" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -221,21 +192,13 @@ jobs:
       - name: Determine next version
         id: version
         run: |
-          set -euo pipefail
-
-          version="$(sed -n '/package = {/,/^	},/{
-            s/^\t\tversion = "\([^"]*\)".*/\1/p
-          }' loom.config.luau | head -1)"
-          latest_tag="$(git tag --list "v*" --sort=-version:refname | sed -n '1p')"
-          latest_version="${latest_tag#v}"
-
-          if [ -n "$latest_tag" ] && [ "$version" = "$latest_version" ]; then
+          version="${{ needs.gate.outputs.version }}"
+          if git rev-parse "v${version}" >/dev/null 2>&1; then
             IFS=. read -r major minor patch <<< "$version"
             next_version="$major.$((minor + 1)).0"
           else
             next_version="$version"
           fi
-
           echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
 
       - name: Bump package version
