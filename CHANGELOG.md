@@ -2,10 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.0
 
-## Unreleased
+- Fix release automation (#17) ([de234d5](https://github.com/flipbook-labs/flipbook-cli/commit/de234d5d92c1c5340e8fdf2c910f5c44e02a4626))
 
-### Changes
+- [bot] Publish v0.0.1 (#15) ([5dffa3e](https://github.com/flipbook-labs/flipbook-cli/commit/5dffa3e4cfb792e0874e105918887de13fcff8ce))
 
 - Fix the PR release creation workflow (#14) ([075cccd](https://github.com/flipbook-labs/flipbook-cli/commit/075cccde28b55a10d58aa788b93f5204b47d6420))
 
@@ -52,4 +53,3 @@ All notable changes to this project will be documented in this file.
 - Add CI workflow and refactor deployment commands for flipbook-cli ([5b3b5ac](https://github.com/flipbook-labs/flipbook-cli/commit/5b3b5ac63fe9f8dcb71f09815acb48aabebb35eb))
 
 - Initial commit ([940f691](https://github.com/flipbook-labs/flipbook-cli/commit/940f69186520dafb5a3ab4819cfa7b094a8ef38b))
-
