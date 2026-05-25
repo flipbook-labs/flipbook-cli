@@ -15,7 +15,7 @@ https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
 {%- endmacro %}
 
 {% if version -%}
-## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}
+## {{ version }}
 {% else -%}
 ## Unreleased
 {% endif -%}

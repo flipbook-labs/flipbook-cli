@@ -2,10 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-
-## 0.1.0 - 2026-05-25
-
-### Changes
+## 0.1.0
 
 - Fix release automation (#17) ([de234d5](https://github.com/flipbook-labs/flipbook-cli/commit/de234d5d92c1c5340e8fdf2c910f5c44e02a4626))
 
@@ -56,4 +53,3 @@ All notable changes to this project will be documented in this file.
 - Add CI workflow and refactor deployment commands for flipbook-cli ([5b3b5ac](https://github.com/flipbook-labs/flipbook-cli/commit/5b3b5ac63fe9f8dcb71f09815acb48aabebb35eb))
 
 - Initial commit ([940f691](https://github.com/flipbook-labs/flipbook-cli/commit/940f69186520dafb5a3ab4819cfa7b094a8ef38b))
-
