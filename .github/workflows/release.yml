@@ -88,13 +88,7 @@ jobs:
           fi
 
           git tag "${tag}"
-          if ! git push origin "${tag}"; then
-            if git ls-remote --exit-code origin "refs/tags/${tag}"; then
-              echo "Tag ${tag} already exists on origin (created concurrently)"
-              exit 0
-            fi
-            exit 1
-          fi
+          git push origin "${tag}"
 
       - name: Create draft GitHub release
         run: |
