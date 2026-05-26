@@ -82,21 +82,14 @@ jobs:
           set -euo pipefail
           tag="v${{ needs.gate.outputs.version }}"
 
-          git fetch origin "refs/tags/${tag}:refs/tags/${tag}" 2>/dev/null || true
-
-          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
-            echo "Tag ${tag} already exists locally"
-            exit 0
-          fi
-
-          if git ls-remote --exit-code origin "refs/tags/${tag}" >/dev/null 2>&1; then
+          if git ls-remote --exit-code origin "refs/tags/${tag}"; then
             echo "Tag ${tag} already exists on origin"
             exit 0
           fi
 
           git tag "${tag}"
-          if ! git push origin "refs/tags/${tag}:refs/tags/${tag}"; then
-            if git ls-remote --exit-code origin "refs/tags/${tag}" >/dev/null 2>&1; then
+          if ! git push origin "${tag}"; then
+            if git ls-remote --exit-code origin "refs/tags/${tag}"; then
               echo "Tag ${tag} already exists on origin (created concurrently)"
               exit 0
             fi
@@ -105,8 +98,9 @@ jobs:
 
       - name: Create draft GitHub release
         run: |
+          set -euo pipefail
           tag="v${{ needs.gate.outputs.version }}"
-          if gh release view "$tag" >/dev/null 2>&1; then
+          if gh release view "$tag"; then
             echo "Draft release $tag already exists"
             exit 0
           fi
@@ -166,7 +160,7 @@ jobs:
 
           tag="v${{ needs.gate.outputs.version }}"
 
-          is_draft="$(gh release view "$tag" --json isDraft -q '.isDraft' 2>/dev/null || echo false)"
+          is_draft="$(gh release view "$tag" --json isDraft -q '.isDraft' || echo false)"
           if [ "$is_draft" != "true" ]; then
             echo "No draft release for $tag, skipping asset upload"
             exit 0
@@ -208,8 +202,9 @@ jobs:
       - name: Determine next version
         id: version
         run: |
+          set -euo pipefail
           version="${{ needs.gate.outputs.version }}"
-          if git rev-parse "v${version}" >/dev/null 2>&1; then
+          if git rev-parse "v${version}"; then
             IFS=. read -r major minor patch <<< "$version"
             next_version="$major.$((minor + 1)).0"
           else
