@@ -111,13 +111,13 @@ jobs:
     if: always()
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
-    # A Windows build failure is tolerated: its artifact is simply omitted
-    # from the release. macOS/Linux must still build and attach.
+    # The Windows build currently fails on a Lute-adjacent issue we still
+    # need to work out. Tolerate it for now so its artifact is omitted
+    # rather than blocking the release.
     continue-on-error: ${{ matrix.os == 'windows' }}
     permissions:
       contents: write
     strategy:
-      # Don't let one platform's failure cancel the other in-progress legs.
       fail-fast: false
       matrix:
         include:
