@@ -21,8 +21,11 @@ local function getUniverseStartPlaceAsync(universeId: number, apiKey: string): n
 	if type(json) == "table" and type(json.data) == "table" then
 		local data = json.data :: json.Array
 		if #data > 0 then
-			local first = data[1]
-			return first.id
+			local first = data[1] :: json.Object
+			local id = first.id
+			if type(id) == "number" then
+				return id
+			end
 		end
 	end
 
