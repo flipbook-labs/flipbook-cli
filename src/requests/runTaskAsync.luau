@@ -43,7 +43,9 @@ local function runTaskAsync(
 			stdio = "default",
 		})
 		return nil
-	end, debug.traceback)
+	end, function(message: string): string
+		return debug.traceback(message, 2)
+	end)
 
 	fs.remove(scriptPath)
 

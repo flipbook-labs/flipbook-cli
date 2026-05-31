@@ -1,7 +1,7 @@
 local crypto = require("@lute/crypto")
 local json = require("@std/json")
 
-local bufferToHex = require("@root/lib/bufferToHex")
+local bufferToHex = require("@root/bufferToHex")
 
 type FormField = {
 	value: any,
