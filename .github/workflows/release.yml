@@ -45,7 +45,7 @@ jobs:
           fi
 
           commit_subject="$(git log -1 --pretty=%s HEAD)"
-          if echo "$commit_subject" | grep -qE '\[bot\] Publish v[0-9]+(\.[0-9]+)*'; then
+          if echo "$commit_subject" | grep -qE '\[(bot|AUTO-GENERATED)\] Publish v[0-9]+(\.[0-9]+)*'; then
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             echo "version=$version" >> "$GITHUB_OUTPUT"
