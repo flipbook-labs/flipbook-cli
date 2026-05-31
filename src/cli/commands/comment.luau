@@ -29,18 +29,12 @@ parser:add("place-name", "option", {
 })
 parser:add("api-key", "option", {
 	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
-	default = process.env.ROBLOX_API_KEY,
-	required = true,
 })
 parser:add("github-token", "option", {
 	help = "GitHub token (Can also be supplied by the GITHUB_TOKEN env var)",
-	default = process.env.GITHUB_TOKEN,
-	required = true,
 })
 parser:add("github-repository", "option", {
 	help = "owner/repo (Can also be supplied by the GITHUB_REPOSITORY env var)",
-	default = process.env.GITHUB_REPOSITORY,
-	required = true,
 })
 parser:add("help", "flag", {
 	help = "Show this help message",
@@ -51,15 +45,15 @@ local function run()
 	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
 	local placeName = parser:get("place-name") :: string
 	local apiKey = assert(
-		parser:get("api-key"),
-		"A Roblox API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
+		parser:get("api-key") or process.env.ROBLOX_API_KEY,
+		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
 	)
 	local githubToken = assert(
-		parser:get("github-token"),
+		parser:get("github-token") or process.env.GITHUB_TOKEN,
 		"A GitHub token is required, use --github-token or the GITHUB_TOKEN env var to supply it"
 	)
 	local repo = assert(
-		parser:get("github-repository"),
+		parser:get("github-repository") or process.env.GITHUB_REPOSITORY,
 		"A GitHub repository (owner/repo) is required, use --github-repository or the GITHUB_REPOSITORY env var"
 	)
 
