@@ -44,21 +44,20 @@ jobs:
             exit 0
           fi
 
-          commit_subject="$(git log -1 --pretty=%s HEAD)"
-          if echo "$commit_subject" | grep -qE '\[bot\] Publish v[0-9]+(\.[0-9]+)*'; then
+          # The version in loom.config.luau is the source of truth. If it
+          # has no matching tag yet, a publish PR was just merged (the bump
+          # landed but nothing has been released) so we publish it. This is
+          # state-based and does not depend on the merge commit's message.
+          if ! git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             echo "version=$version" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          latest_tag="$(git tag --list "v*" --sort=-version:refname | sed -n '1p')"
-          if [ -z "$latest_tag" ]; then
-            commit_count="$(git rev-list --count HEAD)"
-          else
-            commit_count="$(git rev-list --count "${latest_tag}..HEAD")"
-          fi
-
+          # The current version is already released. Surface whether there
+          # are commits since its tag so a new publish PR can be prepared.
+          commit_count="$(git rev-list --count "v${version}..HEAD")"
           if [ "$commit_count" -gt 0 ]; then
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
@@ -112,9 +111,14 @@ jobs:
     if: always()
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
+    # The Windows build currently fails on a Lute-adjacent issue we still
+    # need to work out. Tolerate it for now so its artifact is omitted
+    # rather than blocking the release.
+    continue-on-error: ${{ matrix.os == 'windows' }}
     permissions:
       contents: write
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos
