@@ -2,6 +2,8 @@ local cli = require("@batteries/cli")
 local json = require("@std/json")
 local process = require("@std/process")
 
+local getPlaceIdByNameAsync = require("@root/requests/getPlaceIdByNameAsync")
+local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
 local githubRequest = require("@root/requests/githubRequest")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -17,12 +19,17 @@ parser:add("pr", "option", {
 	help = "Pull request number to comment on.",
 	required = true,
 })
-parser:add("place-id", "option", {
-	help = "Place ID of the deployed storybook preview.",
+parser:add("universe-id", "option", {
+	help = "Universe the preview place lives in.",
 	required = true,
 })
-parser:add("start-place-id", "option", {
-	help = "Start place ID players launch into. Used to build the deep link.",
+parser:add("place-name", "option", {
+	help = "Name of the deployed preview place. Resolved to a place ID to build the link.",
+	required = true,
+})
+parser:add("api-key", "option", {
+	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
+	default = process.env.ROBLOX_API_KEY,
 	required = true,
 })
 parser:add("github-token", "option", {
@@ -41,8 +48,12 @@ parser:add("help", "flag", {
 
 local function run()
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
-	local placeId = assert(tonumber(parser:get("place-id")), "--place-id must be a number")
-	local startPlaceId = assert(tonumber(parser:get("start-place-id")), "--start-place-id must be a number")
+	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
+	local placeName = parser:get("place-name") :: string
+	local apiKey = assert(
+		parser:get("api-key"),
+		"A Roblox API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
+	)
 	local githubToken = assert(
 		parser:get("github-token"),
 		"A GitHub token is required, use --github-token or the GITHUB_TOKEN env var to supply it"
@@ -52,7 +63,12 @@ local function run()
 		"A GitHub repository (owner/repo) is required, use --github-repository or the GITHUB_REPOSITORY env var"
 	)
 
-	local previewUrl = storybookPreviewUrl(startPlaceId, placeId)
+	local targetPlaceId = assert(
+		getPlaceIdByNameAsync(universeId, placeName, apiKey),
+		`Could not find a place named "{placeName}" in universe {universeId}`
+	)
+	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
+	local previewUrl = storybookPreviewUrl(startPlaceId, targetPlaceId)
 
 	local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
 	local body = PR_COMMENT_MARKER
