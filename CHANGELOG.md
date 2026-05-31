@@ -3,9 +3,19 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.3.0
+
+### Changes
+
+- Harden the release workflow gate and tolerate Windows build failures (#26) ([a2dd889](https://github.com/flipbook-labs/flipbook-cli/commit/a2dd8892fa1686905319132a01836935670061dd))
+
+
+
 ## v0.2.0
 
 ### Changes
+
+- [AUTO-GENERATED] Publish v0.2.0 (#22) ([628773b](https://github.com/flipbook-labs/flipbook-cli/commit/628773b7527bfeef4a17a3b17453ed22b8259688))
 
 - Finish up the `comment` command so we can use it in Flipbook (#24) ([de52c3a](https://github.com/flipbook-labs/flipbook-cli/commit/de52c3a1f612414002dabaf69f51eb9f31575824))
 
