@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.1.0
+
+## v0.2.0
+
+### Changes
+
+- Finish up the `comment` command so we can use it in Flipbook (#24) ([de52c3a](https://github.com/flipbook-labs/flipbook-cli/commit/de52c3a1f612414002dabaf69f51eb9f31575824))
+
+- Skip publish tag push when tag already exists on origin (#23) ([628f85a](https://github.com/flipbook-labs/flipbook-cli/commit/628f85a88e966aa1a498c7dc2f87b5613bfc598b))
+
+- Try and fix the release workflow yet again (#21) ([48fb606](https://github.com/flipbook-labs/flipbook-cli/commit/48fb606a1aee643b2781fef8f4d9e428f23798c6))
+
+
+
+## v0.1.0
+
+### Changes
+
+- [bot] Publish v0.1.0 (#20) ([993ca5d](https://github.com/flipbook-labs/flipbook-cli/commit/993ca5d906e668c9a05eedd7bc3911bc9521d28f))
 
 - Fix release automation (#17) ([de234d5](https://github.com/flipbook-labs/flipbook-cli/commit/de234d5d92c1c5340e8fdf2c910f5c44e02a4626))
 
@@ -53,3 +70,4 @@ All notable changes to this project will be documented in this file.
 - Add CI workflow and refactor deployment commands for flipbook-cli ([5b3b5ac](https://github.com/flipbook-labs/flipbook-cli/commit/5b3b5ac63fe9f8dcb71f09815acb48aabebb35eb))
 
 - Initial commit ([940f691](https://github.com/flipbook-labs/flipbook-cli/commit/940f69186520dafb5a3ab4819cfa7b094a8ef38b))
+
