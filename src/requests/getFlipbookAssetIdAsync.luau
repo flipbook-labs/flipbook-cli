@@ -3,7 +3,10 @@ local net = require("@std/net")
 local process = require("@std/process")
 
 local GITHUB_REPO = "flipbook-labs/flipbook"
-local ASSET_ID_FILE = "flipbook-model-asset-id.txt"
+
+-- Release artifacts are named Flipbook-{version}-{assetId}.rbxm so the
+-- Roblox asset ID can be recovered from the filename alone.
+local RUNTIME_ARTIFACT_PATTERN = "^Flipbook%-[^%-]+%-(%d+)%.rbxm$"
 
 local function githubHeaders(): { [string]: string }
 	local headers: { [string]: string } = {
@@ -17,7 +20,7 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function getReleaseAsync(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+local function getReleaseAsync(): { tag_name: string, assets: { { name: string } } }
 	local url = `https://api.github.com/repos/{GITHUB_REPO}/releases/latest`
 	local response = net.request(url, {
 		method = "GET",
@@ -34,29 +37,18 @@ end
 local function getFlipbookAssetIdAsync(): number
 	local release = getReleaseAsync()
 
-	local downloadUrl: string?
 	for _, asset in release.assets do
-		if asset.name == ASSET_ID_FILE then
-			downloadUrl = asset.browser_download_url
-			break
+		local assetId = asset.name:match(RUNTIME_ARTIFACT_PATTERN)
+		if assetId then
+			local id = tonumber(assetId)
+			assert(id, `malformed asset ID in release artifact name "{asset.name}"`)
+			return id :: number
 		end
 	end
 
-	assert(downloadUrl, `release {release.tag_name} has no asset named "{ASSET_ID_FILE}"`)
-
-	local response = net.request(downloadUrl :: string, {
-		method = "GET",
-		headers = githubHeaders(),
-	})
-
-	if response.status >= 400 then
-		error(`failed to download {ASSET_ID_FILE} ({response.status})`)
-	end
-
-	local assetId = tonumber(response.body:match("%d+"))
-	assert(assetId, `{ASSET_ID_FILE} in release {release.tag_name} did not contain a valid asset ID`)
-
-	return assetId :: number
+	error(
+		`release {release.tag_name} has no Flipbook-{{version}}-{{assetId}}.rbxm artifact`
+	)
 end
 
 return getFlipbookAssetIdAsync
