@@ -1,19 +1,17 @@
 local cli = require("@batteries/cli")
 local fs = require("@std/fs")
-local path = require("@std/path")
 local process = require("@std/process")
 
-local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
+local getFlipbookAssetIdAsync = require("@root/requests/getFlipbookAssetIdAsync")
 local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
-local getTempDir = require("@root/getTempDir")
 local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
+local injectFlipbookAsync = require("@root/requests/injectFlipbookAsync")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
-local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
 local title = "deploy"
-local summary = "Deploy an rbxm file containing your storybooks and stories to an experience for previewing."
+local summary = "Deploy a place file containing your storybooks to an experience, injecting the Flipbook runtime after publish."
 
 local parser = cli.parser()
 
@@ -28,18 +26,18 @@ parser:add("universe-id", "option", {
 	help = "Universe to deploy to.",
 	required = true,
 })
-parser:add("stories", "option", {
-	help = "Path to an rbxm file containing storybooks and stories.",
+parser:add("place-file", "option", {
+	help = "Path to an rbxl place file to deploy. Must already contain stories and their dependencies in their authored layout.",
 	required = true,
 })
 parser:add("place-id", "option", {
 	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
-parser:add("flipbook-rbxm", "option", {
-	help = "Optional path to the Flipbook plugin to use as the runtime. When omitted, the latest version from GitHub is used.",
+parser:add("flipbook-asset", "option", {
+	help = "Roblox asset ID of the Flipbook runtime to inject. When omitted, the ID is fetched from the latest GitHub release.",
 })
-parser:add("dry-run", "option", {
-	help = "Skip any steps that would make changes to the live Roblox experience.",
+parser:add("dry-run", "flag", {
+	help = "Publish the place but skip the Flipbook injection step.",
 })
 parser:add("help", "flag", {
 	help = "Show this help message",
@@ -56,41 +54,19 @@ local function run()
 	local universeIdStr = parser:get("universe-id")
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
 
-	local storiesPath = parser:get("stories") :: string
+	local placeFilePath = parser:get("place-file") :: string
 	assert(
-		fs.exists(storiesPath) and fs.type(storiesPath) == "file",
-		`--stories needs to be an rbxm file: {storiesPath}`
+		fs.exists(placeFilePath) and fs.type(placeFilePath) == "file",
+		`--place-file must be an existing rbxl file: {placeFilePath}`
 	)
 
-	local dryRun = parser:get("dry-run")
 	local placeId = tonumber(parser:get("place-id"))
+	local dryRun = parser:has("dry-run")
 
-	local flipbookRbxmPath = if parser:get("flipbook-rbxm") then parser:get("flipbook-rbxm") else getFlipbookRbxmAsync()
-
-	print("Building rbxl for deployment...")
-	local outputRbxlPath = rojoBuild({
-		output = path.join(getTempDir(), `deploy-{os.time()}.rbxl`),
-		project = {
-			name = placeName,
-			emitLegacyScripts = false,
-			tree = {
-				["$className"] = "DataModel",
-				Players = {
-					["$properties"] = {
-						CharacterAutoLoads = false,
-					},
-				},
-				ReplicatedStorage = {
-					Flipbook = {
-						["$path"] = flipbookRbxmPath,
-					},
-					Stories = {
-						["$path"] = storiesPath,
-					},
-				},
-			},
-		},
-	})
+	local flipbookAssetIdStr = parser:get("flipbook-asset")
+	local flipbookAssetId: number = if flipbookAssetIdStr
+		then assert(tonumber(flipbookAssetIdStr), `--flipbook-asset must be a number, got "{flipbookAssetIdStr}"`)
+		else getFlipbookAssetIdAsync()
 
 	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
 
@@ -102,13 +78,19 @@ local function run()
 			placeId = startPlaceId,
 		})
 
-	if dryRun then
-		return
+	print(`Publishing place file to "{placeName}" (place {allocatedPlaceId})...`)
+	publishPlaceAsync(universeId, allocatedPlaceId, placeFilePath, apiKey)
+	print("Place published.")
+
+	if not dryRun then
+		injectFlipbookAsync(flipbookAssetId, {
+			universeId = universeId,
+			placeId = allocatedPlaceId,
+			apiKey = apiKey,
+		})
 	end
 
-	publishPlaceAsync(universeId, allocatedPlaceId, outputRbxlPath, apiKey)
-
-	print(`Published storybook "{placeName}" to place {allocatedPlaceId})`)
+	print(`Deployed storybook "{placeName}" to place {allocatedPlaceId}`)
 	print("Play: " .. storybookPreviewUrl(startPlaceId, allocatedPlaceId))
 end
 
