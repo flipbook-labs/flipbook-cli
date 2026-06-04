@@ -11,7 +11,7 @@ local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
 local title = "deploy"
-local summary = "Deploy a place file containing your storybooks to an experience, injecting the Flipbook runtime after publish."
+local summary = "Deploy a place file containing your storybooks to an experience with an embedded version of Flipbook."
 
 local parser = cli.parser()
 
@@ -27,14 +27,14 @@ parser:add("universe-id", "option", {
 	required = true,
 })
 parser:add("place-file", "option", {
-	help = "Path to an rbxl place file to deploy. Must already contain stories and their dependencies in their authored layout.",
+	help = "Path to an rbxl place file containing your storybooks and stories.",
 	required = true,
 })
 parser:add("place-id", "option", {
 	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
-parser:add("flipbook-model", "option", {
-	help = "Path to a Flipbook runtime rbxm to inject. When omitted, the latest GitHub release is downloaded.",
+parser:add("flipbook-rbxm", "option", {
+	help = "Path to a Flipbook rbxm to inject. By default, the latest GitHub release is downloaded.",
 })
 parser:add("dry-run", "flag", {
 	help = "Publish the place but skip the Flipbook injection step.",
@@ -63,11 +63,11 @@ local function run()
 	local placeId = tonumber(parser:get("place-id"))
 	local dryRun = parser:has("dry-run")
 
-	local flipbookModelOverride = parser:get("flipbook-model")
-	if flipbookModelOverride then
+	local flipbookRbxm = parser:get("flipbook-rbxm")
+	if flipbookRbxm then
 		assert(
-			fs.exists(flipbookModelOverride) and fs.type(flipbookModelOverride) == "file",
-			`--flipbook-model must be an existing rbxm file: {flipbookModelOverride}`
+			fs.exists(flipbookRbxm) and fs.type(flipbookRbxm) == "file",
+			`--flipbook-rbxm must be an existing rbxm file: {flipbookRbxm}`
 		)
 	end
 
@@ -86,7 +86,7 @@ local function run()
 	print("Place published.")
 
 	if not dryRun then
-		local flipbookRbxmPath = flipbookModelOverride or getFlipbookRbxmAsync()
+		local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
 		injectFlipbookAsync(flipbookRbxmPath, {
 			universeId = universeId,
 			placeId = allocatedPlaceId,
