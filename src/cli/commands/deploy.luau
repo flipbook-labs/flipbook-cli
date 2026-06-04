@@ -83,7 +83,6 @@ local function run()
 
 	print(`Publishing place file to "{placeName}" (place {allocatedPlaceId})...`)
 	publishPlaceAsync(universeId, allocatedPlaceId, placeFilePath, apiKey)
-	print("Place published.")
 
 	if not dryRun then
 		local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
