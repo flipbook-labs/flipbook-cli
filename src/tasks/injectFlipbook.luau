@@ -1,26 +1,31 @@
 return [[
 local AssetService = game:GetService("AssetService")
 local HttpService = game:GetService("HttpService")
-local InsertService = game:GetService("InsertService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SerializationService = game:GetService("SerializationService")
 
-local ASSET_ID = _G.ASSET_ID
-assert(ASSET_ID, "_G.ASSET_ID must be supplied")
+-- The Flipbook rbxm is uploaded as the task's binary input and handed to the
+-- script as the first argument. DeserializeInstancesAsync is only available in
+-- Studio plugins and Open Cloud Luau Execution sessions, which is exactly here.
+local arg = ({ ... })[1]
+assert(arg and arg.BinaryInput, "task was not supplied a binary input")
 
-local assetId = assert(tonumber(ASSET_ID), "_G.ASSET_ID must be a valid number")
+local instances = SerializationService:DeserializeInstancesAsync(arg.BinaryInput)
+local flipbook = instances[1]
+assert(flipbook, "binary input deserialized to zero instances")
 
-local model = InsertService:LoadAsset(assetId)
+-- Parent the Flipbook folder directly under ReplicatedStorage so scripts that
+-- do require(ReplicatedStorage.Flipbook...) resolve correctly. Replace any
+-- existing copy so re-deploys stay idempotent.
+local existing = ReplicatedStorage:FindFirstChild("Flipbook")
+if existing then
+	existing:Destroy()
+end
 
--- LoadAsset wraps content in a Model. Pull out the actual Flipbook folder
--- and parent it directly under ReplicatedStorage so scripts that do
--- require(script.Parent.workspace.flipbook-core) resolve correctly.
-local flipbook = model:GetChildren()[1]
-assert(flipbook, "LoadAsset returned an empty model for asset " .. tostring(assetId))
 flipbook.Name = "Flipbook"
 flipbook.Parent = ReplicatedStorage
-model:Destroy()
 
 AssetService:SavePlaceAsync()
 
-print(HttpService:JSONEncode({ success = true, assetId = assetId }))
+print(HttpService:JSONEncode({ success = true }))
 ]]

@@ -2,7 +2,7 @@ local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local process = require("@std/process")
 
-local getFlipbookAssetIdAsync = require("@root/requests/getFlipbookAssetIdAsync")
+local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
 local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
 local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
 local injectFlipbookAsync = require("@root/requests/injectFlipbookAsync")
@@ -33,8 +33,8 @@ parser:add("place-file", "option", {
 parser:add("place-id", "option", {
 	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
 })
-parser:add("flipbook-asset", "option", {
-	help = "Roblox asset ID of the Flipbook runtime to inject. When omitted, the ID is fetched from the latest GitHub release.",
+parser:add("flipbook-model", "option", {
+	help = "Path to a Flipbook runtime rbxm to inject. When omitted, the latest GitHub release is downloaded.",
 })
 parser:add("dry-run", "flag", {
 	help = "Publish the place but skip the Flipbook injection step.",
@@ -63,10 +63,13 @@ local function run()
 	local placeId = tonumber(parser:get("place-id"))
 	local dryRun = parser:has("dry-run")
 
-	local flipbookAssetIdStr = parser:get("flipbook-asset")
-	local flipbookAssetId: number = if flipbookAssetIdStr
-		then assert(tonumber(flipbookAssetIdStr), `--flipbook-asset must be a number, got "{flipbookAssetIdStr}"`)
-		else getFlipbookAssetIdAsync()
+	local flipbookModelOverride = parser:get("flipbook-model")
+	if flipbookModelOverride then
+		assert(
+			fs.exists(flipbookModelOverride) and fs.type(flipbookModelOverride) == "file",
+			`--flipbook-model must be an existing rbxm file: {flipbookModelOverride}`
+		)
+	end
 
 	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
 
@@ -83,7 +86,8 @@ local function run()
 	print("Place published.")
 
 	if not dryRun then
-		injectFlipbookAsync(flipbookAssetId, {
+		local flipbookRbxmPath = flipbookModelOverride or getFlipbookRbxmAsync()
+		injectFlipbookAsync(flipbookRbxmPath, {
 			universeId = universeId,
 			placeId = allocatedPlaceId,
 			apiKey = apiKey,

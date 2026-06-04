@@ -4,12 +4,12 @@ local types = require("@root/types")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-local function injectFlipbookAsync(assetId: number, luauExecutionContext: LuauExecutionContext)
-	print(`Injecting Flipbook asset {assetId} into place {luauExecutionContext.placeId}...`)
+local function injectFlipbookAsync(rbxmPath: string, luauExecutionContext: LuauExecutionContext)
+	print(`Injecting Flipbook into place {luauExecutionContext.placeId}...`)
 
-	runTaskAsync(injectFlipbookTask, {
-		ASSET_ID = assetId,
-	}, luauExecutionContext)
+	runTaskAsync(injectFlipbookTask, {}, luauExecutionContext, {
+		binaryInputPath = rbxmPath,
+	})
 
 	print("Flipbook injected and place saved.")
 end
