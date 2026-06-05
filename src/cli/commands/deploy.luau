@@ -31,10 +31,10 @@ parser:add("place-file", "option", {
 	required = true,
 })
 parser:add("place-id", "option", {
-	help = "Place ID to publish to. If omitted, the place is resolved or created by name.",
+	help = "Place ID to publish to. If omitted, the place is exclusively resolved or created by --place-name. This is useful if you need to disambiguate same-named places",
 })
 parser:add("flipbook-rbxm", "option", {
-	help = "Path to a Flipbook rbxm to inject. By default, the latest GitHub release is downloaded.",
+	help = "Optional path to the Flipbook rbxm to use as the runtime. By default, the latest version from GitHub is used.",
 })
 parser:add("help", "flag", {
 	help = "Show this help message",
