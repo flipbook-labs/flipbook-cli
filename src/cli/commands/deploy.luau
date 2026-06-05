@@ -36,9 +36,6 @@ parser:add("place-id", "option", {
 parser:add("flipbook-rbxm", "option", {
 	help = "Path to a Flipbook rbxm to inject. By default, the latest GitHub release is downloaded.",
 })
-parser:add("dry-run", "flag", {
-	help = "Publish the place but skip the Flipbook injection step.",
-})
 parser:add("help", "flag", {
 	help = "Show this help message",
 })
@@ -61,7 +58,6 @@ local function run()
 	)
 
 	local placeId = tonumber(parser:get("place-id"))
-	local dryRun = parser:has("dry-run")
 
 	local flipbookRbxm = parser:get("flipbook-rbxm")
 	if flipbookRbxm then
@@ -84,14 +80,12 @@ local function run()
 	print(`Publishing place file to "{placeName}" (place {targetPlaceId})...`)
 	publishPlaceAsync(universeId, targetPlaceId, placeFilePath, apiKey)
 
-	if not dryRun then
-		local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
-		injectFlipbookAsync(flipbookRbxmPath, {
-			universeId = universeId,
-			placeId = targetPlaceId,
-			apiKey = apiKey,
-		})
-	end
+	local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
+	injectFlipbookAsync(flipbookRbxmPath, {
+		universeId = universeId,
+		placeId = targetPlaceId,
+		apiKey = apiKey,
+	})
 
 	print(`Deployed storybook "{placeName}" to place {targetPlaceId}`)
 	print(`View: https://roblox.com/games/{targetPlaceId}`)
