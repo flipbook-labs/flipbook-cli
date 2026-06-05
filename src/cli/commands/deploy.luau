@@ -73,7 +73,7 @@ local function run()
 
 	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
 
-	local allocatedPlaceId = if placeId
+	local targetPlaceId = if placeId
 		then placeId
 		else getOrCreatePlaceByNameAsync(universeId, placeName, {
 			apiKey = apiKey,
@@ -81,20 +81,21 @@ local function run()
 			placeId = startPlaceId,
 		})
 
-	print(`Publishing place file to "{placeName}" (place {allocatedPlaceId})...`)
-	publishPlaceAsync(universeId, allocatedPlaceId, placeFilePath, apiKey)
+	print(`Publishing place file to "{placeName}" (place {targetPlaceId})...`)
+	publishPlaceAsync(universeId, targetPlaceId, placeFilePath, apiKey)
 
 	if not dryRun then
 		local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
 		injectFlipbookAsync(flipbookRbxmPath, {
 			universeId = universeId,
-			placeId = allocatedPlaceId,
+			placeId = targetPlaceId,
 			apiKey = apiKey,
 		})
 	end
 
-	print(`Deployed storybook "{placeName}" to place {allocatedPlaceId}`)
-	print("Play: " .. storybookPreviewUrl(startPlaceId, allocatedPlaceId))
+	print(`Deployed storybook "{placeName}" to place {targetPlaceId}`)
+	print(`View: https://roblox.com/games/{targetPlaceId}`)
+	print(`Launch: {storybookPreviewUrl(targetPlaceId)}`)
 end
 
 local command: types.Command = {
