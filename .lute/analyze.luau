@@ -1,6 +1,8 @@
-local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.10.1")
 
 local run = FlipbookBatteries.run
+
+run("stylua", { "-c", "src", ".lute" })
 
 run("luau-lsp", {
 	"analyze",

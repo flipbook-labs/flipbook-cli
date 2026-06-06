@@ -1,7 +1,7 @@
 local fs = require("@std/fs")
 local process = require("@std/process")
-local system = require("@lute/system")
 local project = require("@repo/project")
+local system = require("@lute/system")
 
 local outputPath = tostring(project.BUILD_OUTPUT)
 if string.lower(system.os) == "windows_nt" then
