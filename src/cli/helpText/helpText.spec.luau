@@ -51,7 +51,6 @@ test.suite("helpText.build", function(suite)
 		assert.strContains(output, "--name <name>")
 		assert.strContains(output, "(default: main)")
 	end)
-
 end)
 
 test.suite("helpText.buildRoot", function(suite)

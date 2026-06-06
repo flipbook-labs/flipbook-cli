@@ -27,10 +27,7 @@ local function buildRoot(config: RootConfig): string
 	end
 
 	table.insert(lines, "")
-	table.insert(
-		lines,
-		config.footer or `For more information: {config.title} <command> --help`
-	)
+	table.insert(lines, config.footer or `For more information: {config.title} <command> --help`)
 
 	return table.concat(lines, "\n")
 end
