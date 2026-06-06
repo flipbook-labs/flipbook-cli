@@ -1,73 +1,71 @@
-local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local fs = require("@std/fs")
 local json = require("@std/json")
 local path = require("@std/path")
-local system = require("@std/system")
 
-local config = require("@root/config")
+local createBinaryInputAsync = require("@root/requests/binary-input/createBinaryInputAsync")
+local createTaskAsync = require("@root/requests/binary-input/createTaskAsync")
+local getTaskLogsAsync = require("@root/requests/binary-input/getTaskLogsAsync")
 local types = require("@root/types")
-
-local run = FlipbookBatteries.run
+local uploadBinaryFileAsync = require("@root/requests/binary-input/uploadBinaryFileAsync")
+local waitForTaskCompletion = require("@root/requests/binary-input/waitForTaskCompletion")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
+-- Run a Luau script in the place via the Open Cloud Luau Execution API. Globals
+-- are injected as `_G` entries at the top of the script (matching how the script
+-- bodies in src/tasks read them). The last JSON object a script prints is parsed
+-- and returned, so tasks can hand structured results back to the CLI.
 local function runTaskAsync(
 	script: string,
 	globals: { [string]: string | number | boolean },
-	luauExecutionContext: LuauExecutionContext
+	luauExecutionContext: LuauExecutionContext,
+	-- Path to a file that will be accessible inside the task script as a
+	-- buffer. Usage: `({ ... })[1].BinaryInput`
+	binaryInput: path.Pathlike?
 ): unknown
 	local parts = {}
 	for key, value in globals do
-		table.insert(parts, `{key}="{value}"`)
+		table.insert(parts, `_G["{key}"]={json.serialize(value)};`)
+	end
+	local entryScript = table.concat(parts) .. script
+
+	local binaryInputResourcePath: string? = nil
+	if binaryInput then
+		local contents = fs.readFileToString(binaryInput)
+		local reservedBinaryInput = createBinaryInputAsync(luauExecutionContext, #contents)
+		uploadBinaryFileAsync(reservedBinaryInput.uploadUri, contents)
+		binaryInputResourcePath = reservedBinaryInput.path
 	end
 
-	local scriptPath = tostring(path.join(system.tmpdir(), `flipbook-task-{os.time()}.luau`))
-	fs.writeStringToFile(scriptPath, script)
+	local createdTask = createTaskAsync(luauExecutionContext, entryScript, binaryInputResourcePath)
+	local completedTask = waitForTaskCompletion(luauExecutionContext, createdTask.path)
 
-	local output
-	local ok, err = xpcall(function()
-		output = run(config.rocaleCmd, {
-			"run",
-			"--script",
-			scriptPath,
-			"--universeId",
-			luauExecutionContext.universeId,
-			"--placeId",
-			luauExecutionContext.placeId,
-			"--lua.globals",
-			table.concat(parts, ","),
-		}, {
-			env = {
-				ROBLOX_API_KEY = luauExecutionContext.apiKey,
-			},
-			stdio = "default",
-		})
-		return nil
-	end, function(message: string): string
-		return debug.traceback(message, 2)
-	end)
-
-	fs.remove(scriptPath)
-
-	if not ok then
-		error(err, 0)
+	local logs = getTaskLogsAsync(luauExecutionContext, createdTask.path)
+	for _, message in logs do
+		print(message)
 	end
 
-	if output and output ~= "" then
-		local lastLine
-		for line in output:gmatch("[^\n]+") do
-			if line:match("%S") then
-				lastLine = line
-			end
+	if completedTask.state ~= "COMPLETE" then
+		local taskError = completedTask.error
+		if taskError then
+			error(`Luau execution task {completedTask.state}: {taskError.code} - {taskError.message}`, 0)
 		end
+		error(`Luau execution task {completedTask.state}`, 0)
+	end
 
-		if lastLine then
-			local parseOk, result = pcall(json.deserialize, lastLine)
-			if parseOk then
-				return result
-			end
-			return lastLine
+	local lastLine
+	for _, message in logs do
+		if message:match("%S") then
+			lastLine = message
 		end
+	end
+
+	if lastLine then
+		local parseOk, result = pcall(json.deserialize, lastLine)
+		if parseOk then
+			return result
+		end
+		return lastLine
 	end
 
 	return nil
