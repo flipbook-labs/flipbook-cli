@@ -9,6 +9,16 @@ local getTempDir = require("@root/getTempDir")
 local GITHUB_REPO = "flipbook-labs/flipbook"
 local RBXM_ASSET_NAME = "Flipbook.rbxm"
 
+type GitHubReleaseAsset = {
+	name: string,
+	browserDownloadUrl: string,
+}
+
+type GitHubRelease = {
+	tagName: string,
+	assets: { GitHubReleaseAsset },
+}
+
 local function githubHeaders(): { [string]: string }
 	local headers: { [string]: string } = {
 		Accept = "application/vnd.github+json",
@@ -21,7 +31,7 @@ local function githubHeaders(): { [string]: string }
 	return headers
 end
 
-local function getReleaseAsync(): { tag_name: string, assets: { { name: string, browser_download_url: string } } }
+local function getReleaseAsync(): GitHubRelease
 	local url = `https://api.github.com/repos/{GITHUB_REPO}/releases/latest`
 	local response = net.request(url, {
 		method = "GET",
@@ -32,23 +42,46 @@ local function getReleaseAsync(): { tag_name: string, assets: { { name: string, 
 		error(`failed to fetch GitHub release ({response.status}): {response.body}`)
 	end
 
-	return json.deserialize(response.body) :: any
+	local body = json.deserialize(response.body)
+
+	local obj = json.asObject(body)
+	local tagName = if obj then tostring(obj.tag_name) else nil
+	local assets = if obj then json.asArray(obj.assets) else nil
+
+	if tagName and assets then
+		local validAssets = {}
+		for _, asset in assets do
+			local assetObj = json.asObject(asset)
+			if assetObj and assetObj.name and assetObj.browser_download_url then
+				table.insert(validAssets, {
+					name = tostring(assetObj.name),
+					browserDownloadUrl = tostring(assetObj.browser_download_url),
+				})
+			end
+		end
+
+		return {
+			tagName = tagName,
+			assets = validAssets,
+		}
+	end
+	error("failed to parse GitHub release")
 end
 
-local function findAssetDownloadUrl(release: any): string
+local function findAssetDownloadUrl(release: GitHubRelease): string
 	for _, asset in release.assets do
 		if asset.name == RBXM_ASSET_NAME then
-			return asset.browser_download_url
+			return asset.browserDownloadUrl
 		end
 	end
-	error(`release {release.tag_name} has no asset named "{RBXM_ASSET_NAME}"`)
+	error(`release {release.tagName} has no asset named "{RBXM_ASSET_NAME}"`)
 end
 
 local function getFlipbookRbxmAsync(): string
 	local release = getReleaseAsync()
 	local downloadUrl = findAssetDownloadUrl(release)
 
-	print(`Downloading Flipbook {release.tag_name} from {GITHUB_REPO} releases...`)
+	print(`Downloading Flipbook {release.tagName} from {GITHUB_REPO} releases...`)
 
 	local response = net.request(downloadUrl, {
 		method = "GET",

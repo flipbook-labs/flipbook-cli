@@ -75,6 +75,26 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Locate publish commit
+        id: commit
+        run: |
+          set -euo pipefail
+          version="${{ needs.gate.outputs.version }}"
+
+          # The publish commit is the one that set this version in
+          # loom.config.luau, so pickaxe for that exact line rather than tagging
+          # whichever commit happened to trip the gate. The gate only ever
+          # publishes the current (latest) version, whose line hasn't been
+          # changed away yet, so the newest match is the commit that set it.
+          sha="$(git log -1 --format=%H -S"version = \"${version}\"" -- loom.config.luau)"
+          if [ -z "$sha" ]; then
+            echo "Could not find the commit that set version ${version}" >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Create and push publish tag
         run: |
@@ -86,7 +106,7 @@ jobs:
             exit 0
           fi
 
-          git tag "${tag}"
+          git tag "${tag}" "${{ steps.commit.outputs.sha }}"
           git push origin "${tag}"
 
       - name: Create draft GitHub release
@@ -100,7 +120,7 @@ jobs:
           gh release create "$tag" \
             --draft \
             --title "$tag" \
-            --target "${{ github.sha }}" \
+            --target "${{ steps.commit.outputs.sha }}" \
             --notes-file CHANGELOG.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,7 +1,7 @@
 local json = require("@std/json")
 local net = require("@std/net")
 
-type HttpMethod = "GET" | "POST" | "PATCH"
+type HttpMethod = "GET" | "POST" | "PATCH" | "PUT"
 
 type FetchOptions = {
 	method: HttpMethod?,

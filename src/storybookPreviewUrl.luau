@@ -1,12 +1,16 @@
+local json = require("@std/json")
+
 local percentEncode = require("@root/percentEncode")
 
-local function storybookPreviewUrl(startPlaceId: number, targetPlaceId: number): string
-	if startPlaceId == targetPlaceId then
-		return "https://www.roblox.com/games/" .. targetPlaceId
+local function storybookPreviewUrl(placeId: number, launchData: json.Object?): string
+	local url = `https://www.roblox.com/games/start?placeId={placeId}`
+
+	if launchData then
+		local encodedLaunchData = percentEncode(json.serialize(launchData))
+		url ..= `&launchData={encodedLaunchData}`
 	end
 
-	local launchData = percentEncode(`placeId={targetPlaceId}`)
-	return `https://www.roblox.com/games/start?placeId={startPlaceId}&launchData={launchData}`
+	return url
 end
 
 return storybookPreviewUrl

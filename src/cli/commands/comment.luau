@@ -3,7 +3,6 @@ local json = require("@std/json")
 local process = require("@std/process")
 
 local getPlaceIdByNameAsync = require("@root/requests/getPlaceIdByNameAsync")
-local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
 local githubRequest = require("@root/requests/githubRequest")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
@@ -40,6 +39,13 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
+local COMMENT_TEMPLATE = [[
+## Storybook Preview
+
+* View: {{viewUrl}}
+* Launch: {{launchUrl}}
+]]
+
 local function run()
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
@@ -61,19 +67,10 @@ local function run()
 		getPlaceIdByNameAsync(universeId, placeName, apiKey),
 		`Could not find a place named "{placeName}" in universe {universeId}`
 	)
-	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
-	local previewUrl = storybookPreviewUrl(startPlaceId, targetPlaceId)
 
-	local timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-	local body = PR_COMMENT_MARKER
-		.. "\n## Storybook Preview\n\n"
-		.. "| | Link |\n|--|------|\n"
-		.. "| Play | [Open in Roblox]("
-		.. previewUrl
-		.. ") |\n\n"
-		.. "*Updated "
-		.. timestamp
-		.. "*"
+	local template = COMMENT_TEMPLATE:gsub("{{viewUrl}}", `https://www.roblox.com/games/{targetPlaceId}`)
+		:gsub("{{launchUrl}}", storybookPreviewUrl(targetPlaceId))
+	local body = `{PR_COMMENT_MARKER}\n{template}`
 
 	local existingId: number? = nil
 	local page = 1
