@@ -48,6 +48,9 @@ commit_preprocessors = [
 ]
 
 commit_parsers = [
-  { message = "^Publish v", skip = true },
+  # Skip the auto-generated publish commits. Their squash-merge subject is the
+  # PR title (e.g. "[AUTO-GENERATED] Publish v0.3.0 (#27)"), so match "Publish v"
+  # anywhere rather than anchoring to the start of the message.
+  { message = "Publish v[0-9]", skip = true },
   { message = ".*", group = "Changes" },
 ]

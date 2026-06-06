@@ -109,6 +109,18 @@ jobs:
           git tag "${tag}" "${{ steps.commit.outputs.sha }}"
           git push origin "${tag}"
 
+      # Generate notes for just this release. `--latest` restricts git-cliff to
+      # the newest tag (the one we just pushed) and `--strip header` drops the
+      # changelog preamble, so the output is only the current release's section.
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: release-notes.md
+          GITHUB_REPO: ${{ github.repository }}
+
       - name: Create draft GitHub release
         run: |
           set -euo pipefail
@@ -121,7 +133,7 @@ jobs:
             --draft \
             --title "$tag" \
             --target "${{ steps.commit.outputs.sha }}" \
-            --notes-file CHANGELOG.md
+            --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
