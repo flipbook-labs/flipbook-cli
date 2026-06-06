@@ -19,6 +19,9 @@ process.run({
 
 local lock = require("@repo/loom.lock")
 
+process.run({ "rm", "-rf", tostring(packagesDir) }, { stdio = "inherit" })
+fs.createDirectory(packagesDir)
+
 -- Lute doesn't seem able to bundle `~/.loom/store` yet, so we need to copy the
 -- packages into our project directory to allow them to be part of the bundle.
 for packageId in lock.packages do
