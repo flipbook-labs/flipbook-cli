@@ -117,11 +117,27 @@ jobs:
             echo "Draft release $tag already exists"
             exit 0
           fi
+
+          # Extract only the section for this release from the changelog. The
+          # whole file lists every version, but the release notes should cover
+          # just the current tag, so slice from its "## <tag>" heading up to the
+          # next version heading.
+          awk -v heading="## ${tag}" '
+            $0 == heading { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "Could not find changelog section for ${tag}" >&2
+            exit 1
+          fi
+
           gh release create "$tag" \
             --draft \
             --title "$tag" \
             --target "${{ steps.commit.outputs.sha }}" \
-            --notes-file CHANGELOG.md
+            --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
