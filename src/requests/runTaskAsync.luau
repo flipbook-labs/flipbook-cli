@@ -1,5 +1,6 @@
 local fs = require("@std/fs")
 local json = require("@std/json")
+local path = require("@std/path")
 
 local createBinaryInputAsync = require("@root/requests/binary-input/createBinaryInputAsync")
 local createTaskAsync = require("@root/requests/binary-input/createTaskAsync")
@@ -10,14 +11,7 @@ local waitForTaskCompletion = require("@root/requests/binary-input/waitForTaskCo
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-export type RunTaskOptions = {
-	-- Path to a file uploaded as the task's binary input. The bytes arrive in
-	-- the script as `({ ... })[1].BinaryInput`, a buffer ready for
-	-- SerializationService:DeserializeInstancesAsync.
-	binaryInputPath: string?,
-}
-
-type Globals = { [string]: string | number | boolean }
+export type RunTaskOptions = {}
 
 -- Run a Luau script in the place via the Open Cloud Luau Execution API. Globals
 -- are injected as `_G` entries at the top of the script (matching how the script
@@ -25,23 +19,24 @@ type Globals = { [string]: string | number | boolean }
 -- and returned, so tasks can hand structured results back to the CLI.
 local function runTaskAsync(
 	script: string,
-	globals: Globals,
+	globals: { [string]: string | number | boolean },
 	luauExecutionContext: LuauExecutionContext,
-	options: RunTaskOptions?
+	-- Path to a file that will be accessible inside the task script as a
+	-- buffer. Usage: `({ ... })[1].BinaryInput`
+	binaryInput: path.Pathlike?
 ): unknown
-	local assignments = {}
+	local parts = {}
 	for key, value in globals do
-		table.insert(assignments, `_G["{key}"]={json.serialize(value)};`)
+		table.insert(parts, `_G["{key}"]={json.serialize(value)};`)
 	end
-	local entryScript = table.concat(assignments) .. script
+	local entryScript = table.concat(parts) .. script
 
-	local binaryInputPath = if options then options.binaryInputPath else nil
 	local binaryInputResourcePath: string? = nil
-	if binaryInputPath then
-		local contents = fs.readFileToString(binaryInputPath)
-		local binaryInput = createBinaryInputAsync(luauExecutionContext, #contents)
-		uploadBinaryFileAsync(binaryInput.uploadUri, contents)
-		binaryInputResourcePath = binaryInput.path
+	if binaryInput then
+		local contents = fs.readFileToString(binaryInput)
+		local reservedBinaryInput = createBinaryInputAsync(luauExecutionContext, #contents)
+		uploadBinaryFileAsync(reservedBinaryInput.uploadUri, contents)
+		binaryInputResourcePath = reservedBinaryInput.path
 	end
 
 	local createdTask = createTaskAsync(luauExecutionContext, entryScript, binaryInputResourcePath)

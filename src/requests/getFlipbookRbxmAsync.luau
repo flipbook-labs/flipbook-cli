@@ -32,7 +32,7 @@ local function getReleaseAsync(): { tag_name: string, assets: { { name: string, 
 		error(`failed to fetch GitHub release ({response.status}): {response.body}`)
 	end
 
-	return json.deserialize(response.body) :: any
+	return json.deserialize(response.body)
 end
 
 local function findAssetDownloadUrl(release: any): string
