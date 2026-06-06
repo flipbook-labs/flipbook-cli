@@ -1,4 +1,4 @@
-local FlipbookBatteries = require("@pkg/flipbook-batteries@bump-tool-version")
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local path = require("@std/path")
 
 local config = require("@root/config")
