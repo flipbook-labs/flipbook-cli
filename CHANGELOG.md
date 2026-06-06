@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.4.0
+
+### Changes
+
+- Fix broken release (#35) ([bb04a32](https://github.com/flipbook-labs/flipbook-cli/commit/bb04a321a6c7472762bd36691a50e978b9245c99))
+
+- Generate release notes for just the current release (#34) ([3936620](https://github.com/flipbook-labs/flipbook-cli/commit/3936620af5ef92d25d5b9801d9dbcd1c52128208))
+
+
+
 ## v0.3.0
 
 ### Changes
@@ -21,8 +31,6 @@ All notable changes to this project will be documented in this file.
 
 - Harden the release workflow gate and tolerate Windows build failures (#26) ([a2dd889](https://github.com/flipbook-labs/flipbook-cli/commit/a2dd8892fa1686905319132a01836935670061dd))
 
-- [AUTO-GENERATED] Publish v0.2.0 (#22) ([628773b](https://github.com/flipbook-labs/flipbook-cli/commit/628773b7527bfeef4a17a3b17453ed22b8259688))
-
 - Finish up the `comment` command so we can use it in Flipbook (#24) ([de52c3a](https://github.com/flipbook-labs/flipbook-cli/commit/de52c3a1f612414002dabaf69f51eb9f31575824))
 
 - Skip publish tag push when tag already exists on origin (#23) ([628f85a](https://github.com/flipbook-labs/flipbook-cli/commit/628f85a88e966aa1a498c7dc2f87b5613bfc598b))
@@ -35,11 +43,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changes
 
-- [bot] Publish v0.1.0 (#20) ([993ca5d](https://github.com/flipbook-labs/flipbook-cli/commit/993ca5d906e668c9a05eedd7bc3911bc9521d28f))
-
 - Fix release automation (#17) ([de234d5](https://github.com/flipbook-labs/flipbook-cli/commit/de234d5d92c1c5340e8fdf2c910f5c44e02a4626))
-
-- [bot] Publish v0.0.1 (#15) ([5dffa3e](https://github.com/flipbook-labs/flipbook-cli/commit/5dffa3e4cfb792e0874e105918887de13fcff8ce))
 
 - Fix the PR release creation workflow (#14) ([075cccd](https://github.com/flipbook-labs/flipbook-cli/commit/075cccde28b55a10d58aa788b93f5204b47d6420))
 
