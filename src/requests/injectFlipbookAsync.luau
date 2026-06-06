@@ -7,9 +7,7 @@ type LuauExecutionContext = types.LuauExecutionContext
 local function injectFlipbookAsync(rbxmPath: string, luauExecutionContext: LuauExecutionContext)
 	print(`Injecting Flipbook into place {luauExecutionContext.placeId}...`)
 
-	runTaskAsync(injectFlipbookTask, {}, luauExecutionContext, {
-		binaryInputPath = rbxmPath,
-	})
+	runTaskAsync(injectFlipbookTask, {}, luauExecutionContext, rbxmPath)
 
 	print("Flipbook injected and place saved.")
 end
