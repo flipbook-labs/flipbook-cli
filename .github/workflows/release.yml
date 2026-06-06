@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       force_publish:
@@ -10,114 +12,77 @@ on:
         type: boolean
         default: false
 
-# Title given to the auto-generated publish PR. Because we squash-merge, this
-# becomes the subject of the publish commit on `main`, so publish-release can
-# grep history for it to tag the right commit.
-env:
-  PUBLISH_TITLE_PREFIX: "[AUTO-GENERATED] Publish"
-
 jobs:
-  gate:
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      github.event_name == 'workflow_dispatch'
+  # Publishing is driven by the publish PR merging, not by a push to `main`.
+  # The publish PR always comes from the `publish-next-version` branch (a name
+  # we own), and GitHub hands us the exact merge commit, so we tag that commit
+  # directly instead of searching history for it.
+  publish:
+    if: >
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main' &&
+       github.event.pull_request.head.ref == 'publish-next-version') ||
+      (github.event_name == 'workflow_dispatch' && inputs.force_publish)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
-      has_changes: ${{ steps.eval.outputs.has_changes }}
-      should_publish: ${{ steps.eval.outputs.should_publish }}
-      version: ${{ steps.eval.outputs.version }}
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      published: ${{ steps.tag.outputs.published }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Evaluate release action
-        id: eval
+      - name: Resolve publish commit
+        id: resolve
         run: |
           set -euo pipefail
+          # On a merged publish PR GitHub gives us the exact merge commit; a
+          # forced publish tags the current tip of `main`.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            sha="${{ github.event.pull_request.merge_commit_sha }}"
+          else
+            sha="${{ github.sha }}"
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.resolve.outputs.sha }}
+
+      - name: Read package version
+        id: meta
+        run: |
+          set -euo pipefail
           version="$(grep -m1 'version = "' loom.config.luau | sed 's/.*version = "\([^"]*\)".*/\1/')"
           if [ -z "$version" ]; then
             echo "Could not read package version from loom.config.luau" >&2
             exit 1
           fi
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_publish }}" = "true" ]; then
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # The version in loom.config.luau is the source of truth. If it
-          # has no matching tag yet, a publish PR was just merged (the bump
-          # landed but nothing has been released) so we publish it. This is
-          # state-based and does not depend on the merge commit's message.
-          if ! git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # The current version is already released. Surface whether there
-          # are commits since its tag so a new publish PR can be prepared.
-          commit_count="$(git rev-list --count "v${version}..HEAD")"
-          if [ "$commit_count" -gt 0 ]; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "should_publish=false" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-  publish-release:
-    needs: gate
-    if: needs.gate.outputs.should_publish == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Locate publish commit
-        id: commit
-        run: |
-          set -euo pipefail
-          tag="v${{ needs.gate.outputs.version }}"
-
-          # The publish commit is the squash-merged publish PR, whose subject
-          # is the PR title. Match on the subject alone (not the whole message,
-          # which other commits may quote) so the tag always lands on the bump
-          # commit rather than an unrelated push that tripped the gate.
-          sha="$(git log --format='%H %s' | grep -F -m1 " ${PUBLISH_TITLE_PREFIX} ${tag} " | cut -d' ' -f1 || true)"
-          if [ -z "$sha" ]; then
-            echo "Could not find publish commit for ${tag}" >&2
-            exit 1
-          fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-
       - name: Create and push publish tag
+        id: tag
         run: |
           set -euo pipefail
-          tag="v${{ needs.gate.outputs.version }}"
+          tag="v${{ steps.meta.outputs.version }}"
 
           if git ls-remote --exit-code origin "refs/tags/${tag}"; then
             echo "Tag ${tag} already exists on origin"
+            echo "published=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git tag "${tag}" "${{ steps.commit.outputs.sha }}"
+          # HEAD is the resolved publish commit, so this tags it directly.
+          git tag "${tag}"
           git push origin "${tag}"
+          echo "published=true" >> "$GITHUB_OUTPUT"
 
       - name: Create draft GitHub release
+        if: steps.tag.outputs.published == 'true'
         run: |
           set -euo pipefail
-          tag="v${{ needs.gate.outputs.version }}"
+          tag="v${{ steps.meta.outputs.version }}"
           if gh release view "$tag"; then
             echo "Draft release $tag already exists"
             exit 0
@@ -125,15 +90,15 @@ jobs:
           gh release create "$tag" \
             --draft \
             --title "$tag" \
-            --target "${{ steps.commit.outputs.sha }}" \
+            --target "${{ steps.resolve.outputs.sha }}" \
             --notes-file CHANGELOG.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: build (${{ matrix.os }})
-    needs: [gate, publish-release]
-    if: always()
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     # The Windows build currently fails on a Lute-adjacent issue we still
@@ -163,6 +128,8 @@ jobs:
             zip_name: flipbook-cli-windows-x86_64.zip
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.publish.outputs.sha }}
 
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
@@ -181,7 +148,7 @@ jobs:
 
           zip -j "${{ matrix.zip_name }}" "${{ matrix.artifact_path }}"
 
-          tag="v${{ needs.gate.outputs.version }}"
+          tag="v${{ needs.publish.outputs.version }}"
 
           is_draft="$(gh release view "$tag" --json isDraft -q '.isDraft' || echo false)"
           if [ "$is_draft" != "true" ]; then
@@ -193,15 +160,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Keep a `publish-next-version` PR open whenever `main` has commits worth
+  # releasing. Merging that PR is what triggers the publish job above.
   prepare-release-pr:
-    needs: [gate, publish-release]
-    if: |
-      always() &&
-      needs.gate.result == 'success' &&
-      (
-        (needs.gate.outputs.has_changes == 'true' && needs.gate.outputs.should_publish != 'true') ||
-        (needs.gate.outputs.should_publish == 'true' && needs.publish-release.result == 'success')
-      )
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -215,56 +177,87 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Plan next release
+        id: plan
+        run: |
+          set -euo pipefail
+          version="$(grep -m1 'version = "' loom.config.luau | sed 's/.*version = "\([^"]*\)".*/\1/')"
+          if [ -z "$version" ]; then
+            echo "Could not read package version from loom.config.luau" >&2
+            exit 1
+          fi
+
+          latest_tag="$(git tag --list 'v*' --sort=-version:refname | sed -n '1p')"
+
+          if [ -z "$latest_tag" ]; then
+            # Nothing has ever been released; prepare the current version as the
+            # first release.
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "next_version=$version" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            # `main` is at a version with no tag yet: a publish PR just merged
+            # and the publish job is still tagging it. Let it settle — the next
+            # push re-evaluates once the tag exists.
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # The current version is released. Prepare the next minor only if
+          # commits have landed since its tag.
+          if [ "$(git rev-list --count "v${version}..HEAD")" -eq 0 ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          IFS=. read -r major minor patch <<< "$version"
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+          echo "next_version=$major.$((minor + 1)).0" >> "$GITHUB_OUTPUT"
+
       - uses: CompeyDev/setup-rokit@v0.2.1
+        if: steps.plan.outputs.proceed == 'true'
         with:
           version: v1.2.0
 
       - name: Install dependencies
+        if: steps.plan.outputs.proceed == 'true'
         run: lute run install
 
-      - name: Determine next version
-        id: version
-        run: |
-          set -euo pipefail
-          version="${{ needs.gate.outputs.version }}"
-          if git rev-parse "v${version}"; then
-            IFS=. read -r major minor patch <<< "$version"
-            next_version="$major.$((minor + 1)).0"
-          else
-            next_version="$version"
-          fi
-          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
-
       - name: Bump package version
-        run: lute run bump-version --version "${{ steps.version.outputs.next_version }}"
+        if: steps.plan.outputs.proceed == 'true'
+        run: lute run bump-version --version "${{ steps.plan.outputs.next_version }}"
 
       - uses: orhun/git-cliff-action@v4
+        if: steps.plan.outputs.proceed == 'true'
         with:
           config: cliff.toml
-          args: --tag v${{ steps.version.outputs.next_version }}
+          args: --tag v${{ steps.plan.outputs.next_version }}
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Create or update publish PR
+        if: steps.plan.outputs.proceed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           base: main
           branch: publish-next-version
-          title: "${{ env.PUBLISH_TITLE_PREFIX }} v${{ steps.version.outputs.next_version }}"
-          commit-message: "Publish v${{ steps.version.outputs.next_version }}"
+          title: "[AUTO-GENERATED] Publish v${{ steps.plan.outputs.next_version }}"
+          commit-message: "Publish v${{ steps.plan.outputs.next_version }}"
           body: |
             This PR prepares the next release by bumping the version and updating the changelog.
 
             Merging this PR will:
 
-            1. Create and push tag `v${{ steps.version.outputs.next_version }}`
+            1. Create and push tag `v${{ steps.plan.outputs.next_version }}`
             2. Create a draft GitHub release for that tag
             3. Trigger binary builds for macOS, Linux, and Windows
             4. Attach release assets to the draft release
 
             Next release will be available here:
-            ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.next_version }}
+            ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.plan.outputs.next_version }}
 
             🤖 This PR was generated by [this action run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
           add-paths: |
