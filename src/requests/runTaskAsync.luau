@@ -11,8 +11,6 @@ local waitForTaskCompletion = require("@root/requests/binary-input/waitForTaskCo
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-export type RunTaskOptions = {}
-
 -- Run a Luau script in the place via the Open Cloud Luau Execution API. Globals
 -- are injected as `_G` entries at the top of the script (matching how the script
 -- bodies in src/tasks read them). The last JSON object a script prints is parsed

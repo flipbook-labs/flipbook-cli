@@ -15,17 +15,21 @@ local function createTaskAsync(ctx: LuauExecutionContext, script: string, binary
 		body.binaryInput = binaryInputPath
 	end
 
-	return fetch(
-		`{constants.CLOUD_BASE}/universes/{ctx.universeId}/places/{ctx.placeId}/luau-execution-session-tasks`,
-		{
+	local response =
+		fetch(`{constants.CLOUD_BASE}/universes/{ctx.universeId}/places/{ctx.placeId}/luau-execution-session-tasks`, {
 			method = "POST",
 			headers = {
 				["x-api-key"] = ctx.apiKey,
 				["content-type"] = "application/json",
 			},
 			body = json.serialize(body),
-		}
-	)
+		})
+
+	local obj = json.asObject(response)
+	if obj then
+		return { path = obj.path :: string }
+	end
+	error("Malformed response when creating a task")
 end
 
 return createTaskAsync

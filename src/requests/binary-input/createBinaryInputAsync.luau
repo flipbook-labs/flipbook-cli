@@ -15,7 +15,7 @@ local function createBinaryInputAsync(
 	path: string,
 	uploadUri: string,
 }
-	return fetch(`{constants.CLOUD_BASE}/universes/{ctx.universeId}/luau-execution-session-task-binary-inputs`, {
+	local body = fetch(`{constants.CLOUD_BASE}/universes/{ctx.universeId}/luau-execution-session-task-binary-inputs`, {
 		method = "POST",
 		headers = {
 			["x-api-key"] = ctx.apiKey,
@@ -23,6 +23,15 @@ local function createBinaryInputAsync(
 		},
 		body = json.serialize({ size = byteSize }),
 	})
+
+	local obj = json.asObject(body)
+	if obj then
+		return {
+			path = obj.path :: string,
+			uploadUri = obj.uploadUri :: string,
+		}
+	end
+	error("Malformed response when reserving a binary-input slot")
 end
 
 return createBinaryInputAsync
