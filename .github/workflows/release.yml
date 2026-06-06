@@ -10,6 +10,12 @@ on:
         type: boolean
         default: false
 
+# Title given to the auto-generated publish PR. Because we squash-merge, this
+# becomes the subject of the publish commit on `main`, so publish-release can
+# grep history for it to tag the right commit.
+env:
+  PUBLISH_TITLE_PREFIX: "[AUTO-GENERATED] Publish"
+
 jobs:
   gate:
     if: |
@@ -75,6 +81,25 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Locate publish commit
+        id: commit
+        run: |
+          set -euo pipefail
+          tag="v${{ needs.gate.outputs.version }}"
+
+          # The publish commit is the squash-merged publish PR, whose subject
+          # is the PR title. Match on the subject alone (not the whole message,
+          # which other commits may quote) so the tag always lands on the bump
+          # commit rather than an unrelated push that tripped the gate.
+          sha="$(git log --format='%H %s' | grep -F -m1 " ${PUBLISH_TITLE_PREFIX} ${tag} " | cut -d' ' -f1 || true)"
+          if [ -z "$sha" ]; then
+            echo "Could not find publish commit for ${tag}" >&2
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Create and push publish tag
         run: |
@@ -86,7 +111,7 @@ jobs:
             exit 0
           fi
 
-          git tag "${tag}"
+          git tag "${tag}" "${{ steps.commit.outputs.sha }}"
           git push origin "${tag}"
 
       - name: Create draft GitHub release
@@ -100,7 +125,7 @@ jobs:
           gh release create "$tag" \
             --draft \
             --title "$tag" \
-            --target "${{ github.sha }}" \
+            --target "${{ steps.commit.outputs.sha }}" \
             --notes-file CHANGELOG.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,7 +251,7 @@ jobs:
         with:
           base: main
           branch: publish-next-version
-          title: "[AUTO-GENERATED] Publish v${{ steps.version.outputs.next_version }}"
+          title: "${{ env.PUBLISH_TITLE_PREFIX }} v${{ steps.version.outputs.next_version }}"
           commit-message: "Publish v${{ steps.version.outputs.next_version }}"
           body: |
             This PR prepares the next release by bumping the version and updating the changelog.
