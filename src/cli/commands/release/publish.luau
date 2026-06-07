@@ -34,7 +34,8 @@ local function publish()
 		`Could not find the commit that set version {current} in loom.config.luau`
 	)
 
-	-- A non-zero exit from `ls-remote --exit-code` means the tag isn't on origin.
+	-- `ls-remote` talks to the remote directly, so this is accurate even without a
+	-- prior fetch. A non-zero exit from `--exit-code` means the ref is absent.
 	local remoteTag = process.run({ config.gitCmd, "ls-remote", "--exit-code", "origin", `refs/tags/{tag}` })
 	if remoteTag.ok then
 		print(`Tag {tag} already exists on origin`)
