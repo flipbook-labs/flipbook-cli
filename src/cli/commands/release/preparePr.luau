@@ -52,8 +52,7 @@ local function getRepoSlug(): string
 		".nameWithOwner",
 	})
 	assert(result.ok, result.stderr)
-	local slug = result.stdout:gsub("%s+$", "")
-	return slug
+	return (result.stdout:gsub("%s+$", ""))
 end
 
 local function preparePr()
