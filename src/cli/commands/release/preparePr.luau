@@ -96,19 +96,26 @@ local function preparePr()
 	run(config.gitCmd, { "switch", "-C", branch })
 	run(config.gitCmd, { "add", "CHANGELOG.md", "loom.config.luau" })
 
-	-- Argv array (not a shell string) so the spaces in the commit message and
-	-- author config aren't word-split.
-	local commit = process.run({
-		config.gitCmd,
-		"-c",
-		`user.name={GIT_AUTHOR_NAME}`,
-		"-c",
-		`user.email={GIT_AUTHOR_EMAIL}`,
-		"commit",
-		"-m",
-		`Publish {nextTag}`,
-	}, { stdio = "inherit" })
-	assert(commit.ok, commit.stderr)
+	-- `diff --cached --quiet` exits 0 when the index is clean. On re-runs where
+	-- the version and changelog are already at the target state nothing will be
+	-- staged, so skip the commit rather than letting git fail with "nothing to
+	-- commit".
+	local hasStagedChanges = not process.run({ config.gitCmd, "diff", "--cached", "--quiet" }).ok
+	if hasStagedChanges then
+		-- Argv array (not a shell string) so the spaces in the commit message and
+		-- author config aren't word-split.
+		local commit = process.run({
+			config.gitCmd,
+			"-c",
+			`user.name={GIT_AUTHOR_NAME}`,
+			"-c",
+			`user.email={GIT_AUTHOR_EMAIL}`,
+			"commit",
+			"-m",
+			`Publish {nextTag}`,
+		}, { stdio = "inherit" })
+		assert(commit.ok, commit.stderr)
+	end
 
 	run(config.gitCmd, { "push", "--force", "origin", branch })
 

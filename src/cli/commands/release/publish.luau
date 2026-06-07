@@ -45,7 +45,7 @@ local function publish()
 	end
 
 	if process.run({ config.ghCmd, "release", "view", tag }).ok then
-		print(`Draft release {tag} already exists`)
+		print(`Release {tag} already exists`)
 		return
 	end
 
