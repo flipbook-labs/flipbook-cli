@@ -4,14 +4,36 @@ local path = require("@std/path")
 local fetch = require("@root/requests/fetch")
 
 local function publishPlaceAsync(universeId: number, placeId: number, rbxlPath: path.Pathlike, apiKey: string)
-	fetch(`https://apis.roblox.com/universes/v1/{universeId}/places/{placeId}/versions?versionType=Published`, {
-		method = "POST",
-		headers = {
-			["x-api-key"] = apiKey,
-			["Content-Type"] = "model/x-rbxl",
-		},
-		body = fs.readFileToString(rbxlPath),
-	})
+	local url = `https://apis.roblox.com/universes/v1/{universeId}/places/{placeId}/versions?versionType=Published`
+
+	local ok, err = pcall(function()
+		fetch(url, {
+			method = "POST",
+			headers = {
+				["x-api-key"] = apiKey,
+				["Content-Type"] = "model/x-rbxl",
+			},
+			body = fs.readFileToString(rbxlPath),
+		})
+	end)
+
+	if ok then
+		return
+	end
+
+	-- Roblox answers a publish request with 409 Conflict when the place is locked,
+	-- which is nearly always because it's still open in Studio. The raw status line
+	-- doesn't say that, so point the user at the actual fix.
+	local message = tostring(err)
+	if string.find(message, "409", 1, true) then
+		error(
+			`Could not publish place {placeId}: Roblox returned 409 Conflict. The place is probably open in `
+				.. `Roblox Studio, which locks it for publishing — close it there and run this again.\n\n{message}`,
+			2
+		)
+	end
+
+	error(message, 2)
 end
 
 return publishPlaceAsync
