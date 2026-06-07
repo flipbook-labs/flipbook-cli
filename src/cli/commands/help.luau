@@ -3,6 +3,7 @@ local types = require("@root/cli/types")
 
 local commentCommand = require("@root/cli/commands/comment")
 local deployCommand = require("@root/cli/commands/deploy")
+local releaseCommand = require("@root/cli/commands/release")
 local yankCommand = require("@root/cli/commands/yank")
 
 local title = "help"
@@ -24,6 +25,10 @@ local function run()
 			{
 				name = "yank",
 				description = yankCommand.summary,
+			},
+			{
+				name = "release",
+				description = releaseCommand.summary,
 			},
 			{
 				name = "help",
