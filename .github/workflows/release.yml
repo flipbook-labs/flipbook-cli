@@ -1,5 +1,10 @@
 name: Release
 
+# The release lifecycle lives in the `flipbook-cli release` subcommands (gate,
+# publish, attach, prepare-pr). This workflow builds the binary once and then
+# runs those subcommands against the built artifact, exercising the real binary
+# the way a user would rather than running the source through Lute.
+
 on:
   push:
     branches: [main]
@@ -11,162 +16,27 @@ on:
         default: false
 
 jobs:
-  gate:
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      has_changes: ${{ steps.eval.outputs.has_changes }}
-      should_publish: ${{ steps.eval.outputs.should_publish }}
-      version: ${{ steps.eval.outputs.version }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Evaluate release action
-        id: eval
-        run: |
-          set -euo pipefail
-
-          version="$(grep -m1 'version = "' loom.config.luau | sed 's/.*version = "\([^"]*\)".*/\1/')"
-          if [ -z "$version" ]; then
-            echo "Could not read package version from loom.config.luau" >&2
-            exit 1
-          fi
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_publish }}" = "true" ]; then
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # The version in loom.config.luau is the source of truth. If it
-          # has no matching tag yet, a publish PR was just merged (the bump
-          # landed but nothing has been released) so we publish it. This is
-          # state-based and does not depend on the merge commit's message.
-          if ! git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # The current version is already released. Surface whether there
-          # are commits since its tag so a new publish PR can be prepared.
-          commit_count="$(git rev-list --count "v${version}..HEAD")"
-          if [ "$commit_count" -gt 0 ]; then
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          fi
-          echo "should_publish=false" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-  publish-release:
-    needs: gate
-    if: needs.gate.outputs.should_publish == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Locate publish commit
-        id: commit
-        run: |
-          set -euo pipefail
-          version="${{ needs.gate.outputs.version }}"
-
-          # The publish commit is the one that set this version in
-          # loom.config.luau, so pickaxe for that exact line rather than tagging
-          # whichever commit happened to trip the gate. The gate only ever
-          # publishes the current (latest) version, whose line hasn't been
-          # changed away yet, so the newest match is the commit that set it.
-          sha="$(git log -1 --format=%H -S"version = \"${version}\"" -- loom.config.luau)"
-          if [ -z "$sha" ]; then
-            echo "Could not find the commit that set version ${version}" >&2
-            exit 1
-          fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-
-      - name: Create and push publish tag
-        run: |
-          set -euo pipefail
-          tag="v${{ needs.gate.outputs.version }}"
-
-          if git ls-remote --exit-code origin "refs/tags/${tag}"; then
-            echo "Tag ${tag} already exists on origin"
-            exit 0
-          fi
-
-          git tag "${tag}" "${{ steps.commit.outputs.sha }}"
-          git push origin "${tag}"
-
-      # Generate notes for just this release. `--latest` restricts git-cliff to
-      # the newest tag (the one we just pushed) and `--strip header` drops the
-      # changelog preamble, so the output is only the current release's section.
-      - name: Generate release notes
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: release-notes.md
-          GITHUB_REPO: ${{ github.repository }}
-
-      - name: Create draft GitHub release
-        run: |
-          set -euo pipefail
-          tag="v${{ needs.gate.outputs.version }}"
-          if gh release view "$tag"; then
-            echo "Draft release $tag already exists"
-            exit 0
-          fi
-          gh release create "$tag" \
-            --draft \
-            --title "$tag" \
-            --target "${{ steps.commit.outputs.sha }}" \
-            --notes-file release-notes.md
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
     name: build (${{ matrix.os }})
-    needs: [gate, publish-release]
-    if: always()
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     # The Windows build currently fails on a Lute-adjacent issue we still
     # need to work out. Tolerate it for now so its artifact is omitted
     # rather than blocking the release.
     continue-on-error: ${{ matrix.os == 'windows' }}
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos
-            arch: arm64
             runner: macos-latest
-            artifact_path: build/flipbook-cli
             zip_name: flipbook-cli-macos-arm64.zip
           - os: linux
-            arch: x86_64
             runner: ubuntu-latest
-            artifact_path: build/flipbook-cli
             zip_name: flipbook-cli-linux-x86_64.zip
           - os: windows
-            arch: x86_64
             runner: windows-latest
-            artifact_path: build/flipbook-cli.exe
+            binary: build/flipbook-cli.exe
             zip_name: flipbook-cli-windows-x86_64.zip
     steps:
       - uses: actions/checkout@v6
@@ -181,27 +51,112 @@ jobs:
       - name: Build flipbook-cli
         run: lute run build
 
-      - name: Attach binary to draft release
+      - name: Package binary
         shell: bash
+        run: zip -j "${{ matrix.zip_name }}" "${{ matrix.binary || 'build/flipbook-cli' }}"
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v7
+        with:
+          name: asset-${{ matrix.os }}
+          path: ${{ matrix.zip_name }}
+
+      # The Linux binary is reused by the jobs below to run the release
+      # subcommands, so upload it unzipped for them to download.
+      - name: Upload runnable CLI
+        if: matrix.os == 'linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: flipbook-cli
+          path: build/flipbook-cli
+
+  gate:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_changes: ${{ steps.eval.outputs.has_changes }}
+      should_publish: ${{ steps.eval.outputs.should_publish }}
+      version: ${{ steps.eval.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: flipbook-cli
+
+      - name: Evaluate release action
+        id: eval
         run: |
           set -euo pipefail
+          chmod +x flipbook-cli
+          result="$(./flipbook-cli release gate ${{ inputs.force_publish && '--force-publish' || '' }})"
+          echo "$result"
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
 
-          zip -j "${{ matrix.zip_name }}" "${{ matrix.artifact_path }}"
+  publish-release:
+    needs: [build, gate]
+    if: needs.gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-          tag="v${{ needs.gate.outputs.version }}"
+      - uses: CompeyDev/setup-rokit@v0.2.1
+        with:
+          version: v1.2.0
 
-          is_draft="$(gh release view "$tag" --json isDraft -q '.isDraft' || echo false)"
-          if [ "$is_draft" != "true" ]; then
-            echo "No draft release for $tag, skipping asset upload"
-            exit 0
-          fi
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: flipbook-cli
 
-          gh release upload "$tag" "${{ matrix.zip_name }}" --clobber
+      - name: Tag and draft release
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release draft --version "${{ needs.gate.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attach:
+    needs: [build, gate, publish-release]
+    if: needs.gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # Checkout so `gh` can infer the repository from the origin remote.
+      - uses: actions/checkout@v6
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: flipbook-cli
+
+      - name: Download release assets
+        uses: actions/download-artifact@v8
+        with:
+          pattern: asset-*
+          path: assets
+          merge-multiple: true
+
+      - name: Attach assets to draft release
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release attach --tag "v${{ needs.gate.outputs.version }}" --files assets/*.zip
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   prepare-release-pr:
-    needs: [gate, publish-release]
+    needs: [build, gate, publish-release]
     if: |
       always() &&
       needs.gate.result == 'success' &&
@@ -218,62 +173,35 @@ jobs:
       group: release-pr-${{ github.ref }}
       cancel-in-progress: true
     steps:
+      # Author the PR as the GitHub App rather than the default GITHUB_TOKEN so
+      # that the resulting branch push triggers CI on the publish PR (pushes
+      # made with GITHUB_TOKEN do not trigger further workflow runs).
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.FLIPBOOK_BACKEND_APP_ID }}
+          private-key: ${{ secrets.FLIPBOOK_BACKEND_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
+      # `release prepare-pr` shells out to git-cliff to regenerate the changelog,
+      # which Rokit provides.
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
 
-      - name: Install dependencies
-        run: lute run install
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: flipbook-cli
 
-      - name: Determine next version
-        id: version
+      - name: Prepare publish PR
         run: |
-          set -euo pipefail
-          version="${{ needs.gate.outputs.version }}"
-          if git rev-parse "v${version}"; then
-            IFS=. read -r major minor patch <<< "$version"
-            next_version="$major.$((minor + 1)).0"
-          else
-            next_version="$version"
-          fi
-          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
-
-      - name: Bump package version
-        run: lute run bump-version --version "${{ steps.version.outputs.next_version }}"
-
-      - uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --tag v${{ steps.version.outputs.next_version }}
+          chmod +x flipbook-cli
+          ./flipbook-cli release prepare-pr --base "${{ github.ref_name }}"
         env:
-          OUTPUT: CHANGELOG.md
-          GITHUB_REPO: ${{ github.repository }}
-
-      - name: Create or update publish PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          base: main
-          branch: publish-next-version
-          title: "[AUTO-GENERATED] Publish v${{ steps.version.outputs.next_version }}"
-          commit-message: "Publish v${{ steps.version.outputs.next_version }}"
-          body: |
-            This PR prepares the next release by bumping the version and updating the changelog.
-
-            Merging this PR will:
-
-            1. Create and push tag `v${{ steps.version.outputs.next_version }}`
-            2. Create a draft GitHub release for that tag
-            3. Trigger binary builds for macOS, Linux, and Windows
-            4. Attach release assets to the draft release
-
-            Next release will be available here:
-            ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.next_version }}
-
-            🤖 This PR was generated by [this action run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
-          add-paths: |
-            CHANGELOG.md
-            loom.config.luau
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}

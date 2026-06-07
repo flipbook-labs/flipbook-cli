@@ -65,6 +65,29 @@ Publish an empty place to clear a closed PR preview. Roblox does not expose plac
 flipbook-cli yank --name pr-42
 ```
 
+### `release`
+
+Manage the project's own release lifecycle. The version in `loom.config.luau` is
+the source of truth; these subcommands tag it, draft the GitHub release, attach
+build artifacts, and prepare the next version-bump PR. The release workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) is a thin
+wrapper that runs these against [git-cliff](https://github.com/orhun/git-cliff)
+and [`gh`](https://cli.github.com/) (authenticated via `GH_TOKEN`/`GITHUB_TOKEN`).
+
+| Subcommand   | Description                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------ |
+| `gate`       | Decide whether to publish the current version or prepare the next one. Prints the decision as JSON (`version`, `should_publish`, `has_changes`) for the caller to parse. Pass `--force-publish` to publish regardless of repo state. |
+| `draft`      | Tag the current version's commit, push the tag, and open a draft GitHub release with git-cliff-generated notes. |
+| `attach`     | Upload build artifacts to the draft release for a tag (skips non-draft releases).                |
+| `prepare-pr` | Bump the version, regenerate `CHANGELOG.md`, and open/update the `publish-next-version` PR.       |
+
+```sh
+flipbook-cli release gate
+flipbook-cli release draft --version 1.2.0
+flipbook-cli release attach --tag v1.2.0 --files flipbook-cli-linux-x86_64.zip
+flipbook-cli release prepare-pr --bump minor
+```
+
 ## Environment variables
 
 | Variable                       | Description                                                  |
