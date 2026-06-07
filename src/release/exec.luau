@@ -17,7 +17,7 @@ local function capture(args: { string }, options: RunOptions?): string
 	if not result.ok then
 		error(`Command failed (exit {result.exitcode}): {table.concat(args, " ")}\n{result.stderr}`)
 	end
-	return (string.gsub(result.stdout, "%s+$", ""))
+	return (result.stdout:gsub("%s+$", ""))
 end
 
 -- Run a command for its side effects, streaming its output and asserting

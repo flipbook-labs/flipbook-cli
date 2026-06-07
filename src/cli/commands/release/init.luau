@@ -41,7 +41,7 @@ end
 local function findSubcommand(args: { string }): (string?, number?)
 	local seenRelease = false
 	for i, arg in args do
-		if string.sub(arg, 1, 1) == "-" then
+		if arg:sub(1, 1) == "-" then
 			continue
 		elseif seenRelease then
 			return arg, i

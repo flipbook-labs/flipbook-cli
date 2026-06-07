@@ -1,6 +1,8 @@
 local fs = require("@std/fs")
 local path = require("@std/path")
 
+local loomConfig = require("@repo/loom.config")
+
 -- Only the first `version = "..."` line is the package version; dependencies in
 -- loom.config.luau are pinned with `rev`, not `version`.
 local VERSION_PATTERN = 'version = "[^"]+"'
@@ -8,7 +10,7 @@ local VERSION_PATTERN = 'version = "[^"]+"'
 export type BumpKind = "minor" | "patch"
 
 local function parse(version: string): (number, number, number)
-	local major, minor, patch = string.match(version, "^(%d+)%.(%d+)%.(%d+)$")
+	local major, minor, patch = version:match("^(%d+)%.(%d+)%.(%d+)$")
 	assert(major and minor and patch, `Invalid semver version: "{version}"`)
 	return tonumber(major) :: number, tonumber(minor) :: number, tonumber(patch) :: number
 end
@@ -23,21 +25,14 @@ local function bump(version: string, kind: BumpKind): string
 	return `{major}.{minor + 1}.0`
 end
 
-local function configPath(): string
-	return tostring(path.resolve("loom.config.luau"))
-end
-
 local function read(): string
-	local content = fs.readFileToString(configPath())
-	local version = string.match(content, 'version = "([^"]+)"')
-	assert(version, "Could not read package version from loom.config.luau")
-	return version :: string
+	return loomConfig.package.version
 end
 
 local function write(next: string): ()
-	local file = configPath()
+	local file = tostring(path.resolve("loom.config.luau"))
 	local content = fs.readFileToString(file)
-	local updated, replacements = string.gsub(content, VERSION_PATTERN, `version = "{next}"`, 1)
+	local updated, replacements = content:gsub(VERSION_PATTERN, `version = "{next}"`, 1)
 	assert(replacements == 1, `Failed to bump version to {next}`)
 	fs.writeStringToFile(file, updated)
 end

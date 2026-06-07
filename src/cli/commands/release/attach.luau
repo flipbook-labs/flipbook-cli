@@ -26,7 +26,7 @@ local function run()
 	-- Only ever attach to a draft. Once a release is published we don't want to
 	-- mutate its assets, and a missing release shouldn't be created here.
 	local draft = exec.run({ "gh", "release", "view", tag, "--json", "isDraft", "-q", ".isDraft" })
-	if not draft.ok or string.gsub(draft.stdout, "%s+$", "") ~= "true" then
+	if not draft.ok or draft.stdout:gsub("%s+$", "") ~= "true" then
 		print(`No draft release for {tag}, skipping asset upload`)
 		return
 	end
