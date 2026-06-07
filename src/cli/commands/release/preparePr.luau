@@ -71,15 +71,17 @@ local function run()
 	local releaseUrl = `{server}/{repoSlug()}/releases/tag/{nextTag}`
 	local prTitle = `[AUTO-GENERATED] Publish {nextTag}`
 	local body = table.concat({
-		"This PR prepares the next release by bumping the version and updating the changelog.",
+		">[!IMPORTANT]",
+		"> This PR prepares the next release by bumping the version and updating the changelog.",
+		">",
+		"> **Merging this PR will:**",
+		">",
+		`> 1. Create and push tag \`{nextTag}\``,
+		"> 2. Create a draft GitHub release for that tag",
+		"> 3. Trigger binary builds for macOS, Linux, and Windows",
+		"> 4. Attach release assets to the draft release",
 		"",
-		"Merging this PR will:",
-		"",
-		`1. Create and push tag \`{nextTag}\``,
-		"2. Create a draft GitHub release for that tag",
-		"3. Build the project and attach release assets to the draft release",
-		"",
-		"Next release will be available here:",
+		"Next release will be available here: ",
 		releaseUrl,
 	}, "\n")
 
