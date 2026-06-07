@@ -121,7 +121,7 @@ jobs:
       - name: Tag and draft release
         run: |
           chmod +x flipbook-cli
-          ./flipbook-cli release publish --version "${{ needs.gate.outputs.version }}"
+          ./flipbook-cli release draft --version "${{ needs.gate.outputs.version }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

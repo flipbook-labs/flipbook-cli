@@ -12,18 +12,18 @@ local types = require("@root/cli/types")
 
 local run = FlipbookBatteries.run
 
-local title = "release publish"
+local title = "release draft"
 local summary = "Tag the current version and open a draft GitHub release with generated notes."
 
 local parser = cli.parser()
 parser:add("version", "option", {
-	help = "Version to publish. Defaults to the version in loom.config.luau.",
+	help = "Version to draft. Defaults to the version in loom.config.luau.",
 })
 parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function publish()
+local function draft()
 	local current = parser:get("version") or getCurrentVersion()
 	local tag = `v{current}`
 
@@ -74,7 +74,7 @@ local function publish()
 end
 
 local command: types.Command = {
-	run = publish,
+	run = draft,
 	title = title,
 	summary = summary,
 	parser = parser,

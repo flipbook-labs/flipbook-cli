@@ -1,19 +1,19 @@
 local makeCommandGroup = require("@root/cli/makeCommandGroup")
 
 local attachCommand = require("@self/attach")
+local draftCommand = require("@self/draft")
 local gateCommand = require("@self/gate")
 local preparePrCommand = require("@self/preparePr")
-local publishCommand = require("@self/publish")
 
 return makeCommandGroup({
 	name = "release",
 	title = "release",
-	summary = "Manage the release lifecycle (gate, publish, attach, prepare-pr).",
+	summary = "Manage the release lifecycle (gate, draft, attach, prepare-pr).",
 	subcommands = {
 		gate = gateCommand,
-		publish = publishCommand,
+		draft = draftCommand,
 		attach = attachCommand,
 		["prepare-pr"] = preparePrCommand,
 	},
-	order = { "gate", "publish", "attach", "prepare-pr" },
+	order = { "gate", "draft", "attach", "prepare-pr" },
 })
