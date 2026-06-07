@@ -28,9 +28,8 @@ local function evaluate(input: GateInput): GateResult
 		return { version = input.version, shouldPublish = true, hasChanges = false }
 	end
 
-	-- The current version has no matching tag yet: a publish PR was just merged
-	-- (the bump landed but nothing has been released), so publish it. This is
-	-- state-based and does not depend on the merge commit's message.
+	-- The current version has no matching tag yet: a publish PR merged (the bump
+	-- landed) but nothing has been released, so publish it.
 	if not input.tagExists then
 		return { version = input.version, shouldPublish = true, hasChanges = false }
 	end

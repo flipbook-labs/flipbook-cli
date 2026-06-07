@@ -1,8 +1,8 @@
 name: Release
 
-# The release lifecycle is implemented in flipbook-cli itself (`flipbook-cli
-# release ...`); this workflow is just a thin wrapper that runs those
-# subcommands and owns the per-OS build that differs from project to project.
+# Release decision logic lives in the `flipbook-cli release` subcommands
+# (gate, publish, attach, prepare-pr). This workflow invokes those and owns the
+# per-OS build matrix, which is the part that has to run on CI runners.
 
 on:
   push:
