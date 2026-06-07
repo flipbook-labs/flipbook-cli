@@ -77,7 +77,7 @@ local function findAssetDownloadUrl(release: GitHubRelease): string
 	error(`release {release.tagName} has no asset named "{RBXM_ASSET_NAME}"`)
 end
 
-local function getFlipbookRbxmAsync(): string
+local function getFlipbookRbxmAsync(): path.Path
 	local release = getReleaseAsync()
 	local downloadUrl = findAssetDownloadUrl(release)
 
@@ -92,7 +92,7 @@ local function getFlipbookRbxmAsync(): string
 		error(`failed to download {RBXM_ASSET_NAME} ({response.status})`)
 	end
 
-	local flipbookRbxmPath = tostring(path.join(getTempDir(), "Flipbook.rbxm"))
+	local flipbookRbxmPath = path.join(getTempDir(), "Flipbook.rbxm")
 	fs.writeStringToFile(flipbookRbxmPath, response.body)
 
 	return flipbookRbxmPath

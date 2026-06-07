@@ -10,6 +10,8 @@ local getLastVersionBumpCommit = require("@root/release/getLastVersionBumpCommit
 local getTempDir = require("@root/getTempDir")
 local types = require("@root/cli/types")
 
+local run = FlipbookBatteries.run
+
 local title = "release publish"
 local summary = "Tag the current version and open a draft GitHub release with generated notes."
 
@@ -21,7 +23,7 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function run()
+local function publish()
 	local current = parser:get("version") or getCurrentVersion()
 	local tag = `v{current}`
 
@@ -37,8 +39,8 @@ local function run()
 	if remoteTag.ok then
 		print(`Tag {tag} already exists on origin`)
 	else
-		FlipbookBatteries.run(config.gitCmd, { "tag", tag, sha })
-		FlipbookBatteries.run(config.gitCmd, { "push", "origin", tag })
+		run(config.gitCmd, { "tag", tag, sha })
+		run(config.gitCmd, { "push", "origin", tag })
 		print(`Pushed tag {tag}`)
 	end
 
@@ -52,10 +54,10 @@ local function run()
 	local notes = process.run({ config.gitCliffCmd, "--config", "cliff.toml", "--latest", "--strip", "header" })
 	assert(notes.ok, notes.stderr)
 
-	local notesPath = tostring(path.join(getTempDir(), "release-notes.md"))
-	fs.writeStringToFile(notesPath, (notes.stdout:gsub("%s+$", "")))
+	local notesPath = path.join(getTempDir(), "release-notes.md")
+	fs.writeStringToFile(notesPath, notes.stdout:gsub("%s+$", ""))
 
-	FlipbookBatteries.run(config.ghCmd, {
+	run(config.ghCmd, {
 		"release",
 		"create",
 		tag,
@@ -65,13 +67,13 @@ local function run()
 		"--target",
 		sha,
 		"--notes-file",
-		notesPath,
+		tostring(notesPath),
 	})
 	print(`Created draft release {tag}`)
 end
 
 local command: types.Command = {
-	run = run,
+	run = publish,
 	title = title,
 	summary = summary,
 	parser = parser,

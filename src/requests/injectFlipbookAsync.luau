@@ -1,10 +1,12 @@
+local path = require("@std/path")
+
 local injectFlipbookTask = require("@root/tasks/injectFlipbook")
 local runTaskAsync = require("@root/requests/runTaskAsync")
 local types = require("@root/types")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-local function injectFlipbookAsync(rbxmPath: string, luauExecutionContext: LuauExecutionContext)
+local function injectFlipbookAsync(rbxmPath: path.Pathlike, luauExecutionContext: LuauExecutionContext)
 	print(`Injecting Flipbook into place {luauExecutionContext.placeId}...`)
 
 	runTaskAsync(injectFlipbookTask, {}, luauExecutionContext, rbxmPath)

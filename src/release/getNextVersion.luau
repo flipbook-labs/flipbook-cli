@@ -1,11 +1,11 @@
 local parseVersion = require("@root/release/parseVersion")
 
-export type BumpKind = "major" | "minor" | "patch"
+export type VersionComponent = "major" | "minor" | "patch"
 
 -- Compute the next version. `major` resets the minor and patch (x.y.z ->
 -- (x+1).0.0); `minor` resets the patch (x.y.z -> x.(y+1).0); `patch` increments
 -- the patch (x.y.z -> x.y.(z+1)).
-local function getNextVersion(version: string, kind: BumpKind): string
+local function getNextVersion(version: string, kind: VersionComponent): string
 	local major, minor, patch = parseVersion(version)
 	if kind == "major" then
 		return `{major + 1}.0.0`

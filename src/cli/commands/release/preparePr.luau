@@ -10,7 +10,7 @@ local writeVersion = require("@root/release/writeVersion")
 
 local run = FlipbookBatteries.run
 
-type BumpKind = getNextVersion.BumpKind
+type VersionComponent = getNextVersion.VersionComponent
 
 local title = "release prepare-pr"
 local summary = "Bump the version, regenerate the changelog, and open/update the publish PR."
@@ -37,21 +37,29 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local function repoSlug(): string
+local function getRepoSlug(): string
 	if process.env.GITHUB_REPOSITORY then
 		return process.env.GITHUB_REPOSITORY
 	end
 	-- GITHUB_REPOSITORY is set in Actions; fall back to gh for local runs.
-	local result = process.run({ config.ghCmd, "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner" })
+	local result = process.run({
+		config.ghCmd,
+		"repo",
+		"view",
+		"--json",
+		"nameWithOwner",
+		"-q",
+		".nameWithOwner",
+	})
 	assert(result.ok, result.stderr)
-	return (result.stdout:gsub("%s+$", ""))
+	return result.stdout:gsub("%s+$", "")
 end
 
 local function preparePr()
 	local current = getCurrentVersion()
 
 	local bumpOption = parser:get("bump")
-	local bumpKind: BumpKind
+	local bumpKind: VersionComponent
 	if bumpOption == "major" then
 		bumpKind = "major"
 	elseif bumpOption == "patch" then
@@ -59,7 +67,7 @@ local function preparePr()
 	elseif bumpOption == "minor" then
 		bumpKind = "minor"
 	else
-		error(`Unknown bump kind "{bumpOption}" (expected major, minor, or patch)`)
+		error(`Unknown version component "{bumpOption}"`)
 	end
 
 	-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
@@ -73,7 +81,14 @@ local function preparePr()
 
 	writeVersion(nextVersion)
 	-- Regenerate the full changelog, treating unreleased commits as `nextTag`.
-	run(config.gitCliffCmd, { "--config", "cliff.toml", "--tag", nextTag, "--output", "CHANGELOG.md" })
+	run(config.gitCliffCmd, {
+		"--config",
+		"cliff.toml",
+		"--tag",
+		nextTag,
+		"--output",
+		"CHANGELOG.md",
+	})
 
 	local base = parser:get("base") :: string
 	local branch = parser:get("branch") :: string
@@ -98,7 +113,7 @@ local function preparePr()
 	run(config.gitCmd, { "push", "--force", "origin", branch })
 
 	local server = process.env.GITHUB_SERVER_URL or "https://github.com"
-	local releaseUrl = `{server}/{repoSlug()}/releases/tag/{nextTag}`
+	local releaseUrl = `{server}/{getRepoSlug()}/releases/tag/{nextTag}`
 	local prTitle = `[AUTO-GENERATED] Publish {nextTag}`
 	local prBody = table.concat({
 		">[!IMPORTANT]",
