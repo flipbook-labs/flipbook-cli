@@ -1,10 +1,10 @@
 local test = require("@std/test")
 
-local evaluateGate = require("@root/release/evaluateGate")
+local evaluateReleaseGate = require("@root/release/evaluateReleaseGate")
 
-test.suite("evaluateGate", function(suite)
+test.suite("evaluateReleaseGate", function(suite)
 	suite:case("force-publish always publishes the current version", function(assert)
-		local result = evaluateGate({
+		local result = evaluateReleaseGate({
 			version = "1.2.3",
 			forcePublish = true,
 			tagExists = true,
@@ -16,7 +16,7 @@ test.suite("evaluateGate", function(suite)
 	end)
 
 	suite:case("publishes when the current version has no tag yet", function(assert)
-		local result = evaluateGate({
+		local result = evaluateReleaseGate({
 			version = "1.2.3",
 			forcePublish = false,
 			tagExists = false,
@@ -27,7 +27,7 @@ test.suite("evaluateGate", function(suite)
 	end)
 
 	suite:case("does not publish a released version but flags unreleased commits", function(assert)
-		local result = evaluateGate({
+		local result = evaluateReleaseGate({
 			version = "1.2.3",
 			forcePublish = false,
 			tagExists = true,
@@ -38,7 +38,7 @@ test.suite("evaluateGate", function(suite)
 	end)
 
 	suite:case("reports no changes when a released version is at its tag", function(assert)
-		local result = evaluateGate({
+		local result = evaluateReleaseGate({
 			version = "1.2.3",
 			forcePublish = false,
 			tagExists = true,

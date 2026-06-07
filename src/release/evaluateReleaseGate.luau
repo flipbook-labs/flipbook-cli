@@ -23,7 +23,7 @@ export type GateResult = {
 	hasChanges: boolean,
 }
 
-local function evaluateGate(input: GateInput): GateResult
+local function evaluateReleaseGate(input: GateInput): GateResult
 	if input.forcePublish then
 		return { version = input.version, shouldPublish = true, hasChanges = false }
 	end
@@ -43,4 +43,4 @@ local function evaluateGate(input: GateInput): GateResult
 	}
 end
 
-return evaluateGate
+return evaluateReleaseGate

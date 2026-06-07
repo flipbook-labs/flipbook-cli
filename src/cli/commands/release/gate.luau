@@ -3,9 +3,8 @@ local json = require("@std/json")
 local process = require("@std/process")
 
 local config = require("@root/config")
-local currentVersion = require("@root/release/currentVersion")
-local evaluateGate = require("@root/release/evaluateGate")
-local tagExists = require("@root/release/tagExists")
+local evaluateReleaseGate = require("@root/release/evaluateReleaseGate")
+local loomConfig = require("@repo/loom.config")
 local types = require("@root/cli/types")
 
 local title = "release gate"
@@ -20,22 +19,25 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = currentVersion
+	local current = loomConfig.package.version
 	local tag = `v{current}`
 
+	-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
+	-- code answers whether the tag exists; `-q` silences the stderr it would print.
+	local tagExists = process.run({ config.gitCmd, "rev-parse", "-q", "--verify", `refs/tags/{tag}` }).ok
+
 	-- Commits between the current version's tag and HEAD; 0 when untagged.
-	local tagged = tagExists(tag)
 	local commitsSinceTag = 0
-	if tagged then
+	if tagExists then
 		local revList = process.run({ config.gitCmd, "rev-list", "--count", `{tag}..HEAD` })
 		assert(revList.ok, revList.stderr)
 		commitsSinceTag = tonumber(revList.stdout) or 0
 	end
 
-	local result = evaluateGate({
+	local result = evaluateReleaseGate({
 		version = current,
 		forcePublish = parser:has("force-publish"),
-		tagExists = tagged,
+		tagExists = tagExists,
 		commitsSinceTag = commitsSinceTag,
 	})
 

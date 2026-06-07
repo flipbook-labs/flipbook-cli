@@ -3,10 +3,9 @@ local process = require("@std/process")
 
 local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 
-local bumpVersion = require("@root/release/bumpVersion")
 local config = require("@root/config")
-local currentVersion = require("@root/release/currentVersion")
-local tagExists = require("@root/release/tagExists")
+local getNextVersion = require("@root/release/getNextVersion")
+local loomConfig = require("@repo/loom.config")
 local types = require("@root/cli/types")
 local writeVersion = require("@root/release/writeVersion")
 
@@ -46,12 +45,16 @@ local function repoSlug(): string
 end
 
 local function run()
-	local current = currentVersion
-	local bumpKind: bumpVersion.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
+	local current = loomConfig.package.version
+	local bumpKind: getNextVersion.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
+
+	-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
+	-- code answers whether the tag exists; `-q` silences the stderr it would print.
+	local tagExists = process.run({ config.gitCmd, "rev-parse", "-q", "--verify", `refs/tags/v{current}` }).ok
 
 	-- If the current version is already tagged, bump to the next one; otherwise
 	-- the version hasn't been released yet, so prepare a PR for it as-is.
-	local nextVersion = if tagExists(`v{current}`) then bumpVersion(current, bumpKind) else current
+	local nextVersion = if tagExists then getNextVersion(current, bumpKind) else current
 	local nextTag = `v{nextVersion}`
 
 	writeVersion(nextVersion)

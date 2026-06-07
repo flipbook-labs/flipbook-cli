@@ -5,12 +5,12 @@ local path = require("@std/path")
 -- loom.config.luau are pinned with `rev`, not `version`.
 local VERSION_PATTERN = 'version = "[^"]+"'
 
--- Rewrite the package version in loom.config.luau to `next`.
-local function writeVersion(next: string): ()
+-- Rewrite the package version in loom.config.luau to `nextVersion`.
+local function writeVersion(nextVersion: string): ()
 	local file = tostring(path.resolve("loom.config.luau"))
 	local content = fs.readFileToString(file)
-	local updated, replacements = content:gsub(VERSION_PATTERN, `version = "{next}"`, 1)
-	assert(replacements == 1, `Failed to bump version to {next}`)
+	local updated, replacements = content:gsub(VERSION_PATTERN, `version = "{nextVersion}"`, 1)
+	assert(replacements == 1, `Failed to bump version to {nextVersion}`)
 	fs.writeStringToFile(file, updated)
 end
 
