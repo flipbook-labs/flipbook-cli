@@ -28,7 +28,7 @@ local function publishPlaceAsync(universeId: number, placeId: number, rbxlPath: 
 	-- status leads the string. Match "409 " (with the trailing space) so a place or
 	-- universe id that happens to contain "409" in the URL can't trigger a false match.
 	local message = tostring(err)
-	if string.find(message, "409 ", 1, true) then
+	if message:find("409 ") then
 		error(
 			`Could not publish place {placeId}: Roblox returned 409 Conflict. The place is probably open in `
 				.. `Roblox Studio, which locks it for publishing — close it there and run this again.\n\n{message}`,
