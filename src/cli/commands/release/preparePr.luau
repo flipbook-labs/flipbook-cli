@@ -39,7 +39,7 @@ local function repoSlug(): string
 end
 
 local function run()
-	local current = version.read()
+	local current = version.current
 	local bumpKind: version.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
 
 	-- If the current version is already tagged, bump to the next one; otherwise

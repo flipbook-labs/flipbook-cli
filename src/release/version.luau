@@ -25,10 +25,6 @@ local function bump(version: string, kind: BumpKind): string
 	return `{major}.{minor + 1}.0`
 end
 
-local function read(): string
-	return loomConfig.package.version
-end
-
 local function write(next: string): ()
 	local file = tostring(path.resolve("loom.config.luau"))
 	local content = fs.readFileToString(file)
@@ -38,8 +34,9 @@ local function write(next: string): ()
 end
 
 return {
+	-- The package version currently in loom.config.luau (the source of truth).
+	current = loomConfig.package.version,
 	parse = parse,
 	bump = bump,
-	read = read,
 	write = write,
 }

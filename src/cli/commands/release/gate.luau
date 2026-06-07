@@ -18,7 +18,7 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = version.read()
+	local current = version.current
 	local tag = `v{current}`
 
 	local tagExists = git.tagExists(tag)

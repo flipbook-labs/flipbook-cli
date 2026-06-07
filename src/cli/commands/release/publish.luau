@@ -21,7 +21,7 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = parser:get("version") or version.read()
+	local current = parser:get("version") or version.current
 	local tag = `v{current}`
 
 	-- Tag the commit that set this version rather than whichever commit happened
