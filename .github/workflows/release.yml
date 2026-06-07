@@ -1,8 +1,9 @@
 name: Release
 
-# Release decision logic lives in the `flipbook-cli release` subcommands
-# (gate, publish, attach, prepare-pr). This workflow invokes those and owns the
-# per-OS build matrix, which is the part that has to run on CI runners.
+# The release lifecycle lives in the `flipbook-cli release` subcommands (gate,
+# publish, attach, prepare-pr). This workflow builds the binary once and then
+# runs those subcommands against the built artifact, exercising the real binary
+# the way a user would rather than running the source through Lute.
 
 on:
   push:
@@ -15,90 +16,27 @@ on:
         default: false
 
 jobs:
-  gate:
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      has_changes: ${{ steps.eval.outputs.has_changes }}
-      should_publish: ${{ steps.eval.outputs.should_publish }}
-      version: ${{ steps.eval.outputs.version }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: CompeyDev/setup-rokit@v0.2.1
-        with:
-          version: v1.2.0
-
-      - name: Install dependencies
-        run: lute run install
-
-      - name: Evaluate release action
-        id: eval
-        run: |
-          set -euo pipefail
-          result="$(lute cli.luau release gate ${{ inputs.force_publish && '--force-publish' || '' }})"
-          echo "$result"
-          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
-
-  publish-release:
-    needs: gate
-    if: needs.gate.outputs.should_publish == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: CompeyDev/setup-rokit@v0.2.1
-        with:
-          version: v1.2.0
-
-      - name: Install dependencies
-        run: lute run install
-
-      - name: Tag and draft release
-        run: lute cli.luau release publish --version "${{ needs.gate.outputs.version }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
     name: build (${{ matrix.os }})
-    needs: [gate, publish-release]
-    if: always()
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     # The Windows build currently fails on a Lute-adjacent issue we still
     # need to work out. Tolerate it for now so its artifact is omitted
     # rather than blocking the release.
     continue-on-error: ${{ matrix.os == 'windows' }}
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos
-            arch: arm64
             runner: macos-latest
-            artifact_path: build/flipbook-cli
             zip_name: flipbook-cli-macos-arm64.zip
           - os: linux
-            arch: x86_64
             runner: ubuntu-latest
-            artifact_path: build/flipbook-cli
             zip_name: flipbook-cli-linux-x86_64.zip
           - os: windows
-            arch: x86_64
             runner: windows-latest
-            artifact_path: build/flipbook-cli.exe
+            binary: build/flipbook-cli.exe
             zip_name: flipbook-cli-windows-x86_64.zip
     steps:
       - uses: actions/checkout@v6
@@ -115,16 +53,112 @@ jobs:
 
       - name: Package binary
         shell: bash
-        run: zip -j "${{ matrix.zip_name }}" "${{ matrix.artifact_path }}"
+        run: zip -j "${{ matrix.zip_name }}" "${{ matrix.binary || 'build/flipbook-cli' }}"
 
-      - name: Attach binary to draft release
-        if: needs.gate.outputs.should_publish == 'true'
-        run: lute cli.luau release attach --tag "v${{ needs.gate.outputs.version }}" --files "${{ matrix.zip_name }}"
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-${{ matrix.os }}
+          path: ${{ matrix.zip_name }}
+
+      # The Linux binary is reused by the jobs below to run the release
+      # subcommands, so upload it unzipped for them to download.
+      - name: Upload runnable CLI
+        if: matrix.os == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: flipbook-cli
+          path: build/flipbook-cli
+
+  gate:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_changes: ${{ steps.eval.outputs.has_changes }}
+      should_publish: ${{ steps.eval.outputs.should_publish }}
+      version: ${{ steps.eval.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v4
+        with:
+          name: flipbook-cli
+
+      - name: Evaluate release action
+        id: eval
+        run: |
+          set -euo pipefail
+          chmod +x flipbook-cli
+          result="$(./flipbook-cli release gate ${{ inputs.force_publish && '--force-publish' || '' }})"
+          echo "$result"
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
+
+  publish-release:
+    needs: [build, gate]
+    if: needs.gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # `release publish` shells out to git-cliff for the release notes, which
+      # Rokit provides.
+      - uses: CompeyDev/setup-rokit@v0.2.1
+        with:
+          version: v1.2.0
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v4
+        with:
+          name: flipbook-cli
+
+      - name: Tag and draft release
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release publish --version "${{ needs.gate.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attach:
+    needs: [build, gate, publish-release]
+    if: needs.gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # Checkout so `gh` can infer the repository from the origin remote.
+      - uses: actions/checkout@v6
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v4
+        with:
+          name: flipbook-cli
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: asset-*
+          path: assets
+          merge-multiple: true
+
+      - name: Attach assets to draft release
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release attach --tag "v${{ needs.gate.outputs.version }}" --files assets/*.zip
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   prepare-release-pr:
-    needs: [gate, publish-release]
+    needs: [build, gate, publish-release]
     if: |
       always() &&
       needs.gate.result == 'success' &&
@@ -156,14 +190,20 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      # `release prepare-pr` shells out to git-cliff to regenerate the changelog,
+      # which Rokit provides.
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
 
-      - name: Install dependencies
-        run: lute run install
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v4
+        with:
+          name: flipbook-cli
 
       - name: Prepare publish PR
-        run: lute cli.luau release prepare-pr --base "${{ github.ref_name }}"
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release prepare-pr --base "${{ github.ref_name }}"
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

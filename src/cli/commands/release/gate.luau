@@ -1,8 +1,10 @@
 local cli = require("@batteries/cli")
 local json = require("@std/json")
+local process = require("@std/process")
 
+local config = require("@root/config")
 local gate = require("@root/release/gate")
-local git = require("@root/release/git")
+local tagExists = require("@root/release/tagExists")
 local types = require("@root/cli/types")
 local version = require("@root/release/version")
 
@@ -21,12 +23,20 @@ local function run()
 	local current = version.current
 	local tag = `v{current}`
 
-	local tagExists = git.tagExists(tag)
+	-- Commits between the current version's tag and HEAD; 0 when untagged.
+	local tagged = tagExists(tag)
+	local commitsSinceTag = 0
+	if tagged then
+		local revList = process.run({ config.gitCmd, "rev-list", "--count", `{tag}..HEAD` })
+		assert(revList.ok, revList.stderr)
+		commitsSinceTag = tonumber(revList.stdout) or 0
+	end
+
 	local result = gate.evaluate({
 		version = current,
 		forcePublish = parser:has("force-publish"),
-		tagExists = tagExists,
-		commitsSinceTag = if tagExists then git.commitsSince(tag) else 0,
+		tagExists = tagged,
+		commitsSinceTag = commitsSinceTag,
 	})
 
 	-- Emit the decision as JSON on stdout so callers (the release workflow, or a

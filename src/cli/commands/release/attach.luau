@@ -1,6 +1,7 @@
 local cli = require("@batteries/cli")
+local process = require("@std/process")
 
-local exec = require("@root/release/exec")
+local config = require("@root/config")
 local types = require("@root/cli/types")
 
 local title = "release attach"
@@ -25,16 +26,18 @@ local function run()
 
 	-- Only ever attach to a draft. Once a release is published we don't want to
 	-- mutate its assets, and a missing release shouldn't be created here.
-	local draft = exec.run({ "gh", "release", "view", tag, "--json", "isDraft", "-q", ".isDraft" })
+	local draft = process.run({ config.ghCmd, "release", "view", tag, "--json", "isDraft", "-q", ".isDraft" })
 	if not draft.ok or draft.stdout:gsub("%s+$", "") ~= "true" then
 		print(`No draft release for {tag}, skipping asset upload`)
 		return
 	end
 
-	local args = { "gh", "release", "upload", tag }
+	-- Argv array (not a shell string) so filenames with spaces stay intact.
+	local args = { config.ghCmd, "release", "upload", tag }
 	table.move(files, 1, #files, #args + 1, args)
 	table.insert(args, "--clobber")
-	exec.check(args)
+	local upload = process.run(args, { stdio = "inherit" })
+	assert(upload.ok, upload.stderr)
 
 	print(`Attached {#files} file(s) to {tag}`)
 end

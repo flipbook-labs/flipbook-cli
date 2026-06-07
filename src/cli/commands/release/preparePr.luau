@@ -1,9 +1,10 @@
 local cli = require("@batteries/cli")
 local process = require("@std/process")
 
-local cliff = require("@root/release/cliff")
-local exec = require("@root/release/exec")
-local git = require("@root/release/git")
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
+
+local config = require("@root/config")
+local tagExists = require("@root/release/tagExists")
 local types = require("@root/cli/types")
 local version = require("@root/release/version")
 
@@ -33,9 +34,13 @@ parser:add("help", "flag", {
 })
 
 local function repoSlug(): string
+	if process.env.GITHUB_REPOSITORY then
+		return process.env.GITHUB_REPOSITORY
+	end
 	-- GITHUB_REPOSITORY is set in Actions; fall back to gh for local runs.
-	return process.env.GITHUB_REPOSITORY
-		or exec.capture({ "gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner" })
+	local result = process.run({ config.ghCmd, "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner" })
+	assert(result.ok, result.stderr)
+	return (result.stdout:gsub("%s+$", ""))
 end
 
 local function run()
@@ -44,19 +49,26 @@ local function run()
 
 	-- If the current version is already tagged, bump to the next one; otherwise
 	-- the version hasn't been released yet, so prepare a PR for it as-is.
-	local nextVersion = if git.tagExists(`v{current}`) then version.bump(current, bumpKind) else current
+	local nextVersion = if tagExists(`v{current}`) then version.bump(current, bumpKind) else current
 	local nextTag = `v{nextVersion}`
 
 	version.write(nextVersion)
-	cliff.writeChangelog(nextTag, "CHANGELOG.md")
+	-- Regenerate the full changelog, treating unreleased commits as `nextTag`.
+	FlipbookBatteries.run(
+		config.gitCliffCmd,
+		{ "--config", "cliff.toml", "--tag", nextTag, "--output", "CHANGELOG.md" }
+	)
 
 	local base = parser:get("base") :: string
 	local branch = parser:get("branch") :: string
 
-	exec.check({ "git", "switch", "-C", branch })
-	exec.check({ "git", "add", "CHANGELOG.md", "loom.config.luau" })
-	exec.check({
-		"git",
+	FlipbookBatteries.run(config.gitCmd, { "switch", "-C", branch })
+	FlipbookBatteries.run(config.gitCmd, { "add", "CHANGELOG.md", "loom.config.luau" })
+
+	-- Argv array (not a shell string) so the spaces in the commit message and
+	-- author config aren't word-split.
+	local commit = process.run({
+		config.gitCmd,
 		"-c",
 		`user.name={GIT_AUTHOR_NAME}`,
 		"-c",
@@ -64,8 +76,10 @@ local function run()
 		"commit",
 		"-m",
 		`Publish {nextTag}`,
-	})
-	exec.check({ "git", "push", "--force", "origin", branch })
+	}, { stdio = "inherit" })
+	assert(commit.ok, commit.stderr)
+
+	FlipbookBatteries.run(config.gitCmd, { "push", "--force", "origin", branch })
 
 	local server = process.env.GITHUB_SERVER_URL or "https://github.com"
 	local releaseUrl = `{server}/{repoSlug()}/releases/tag/{nextTag}`
@@ -86,8 +100,8 @@ local function run()
 	}, "\n")
 
 	-- Update the existing publish PR in place if there is one, otherwise open it.
-	local existing = exec.capture({
-		"gh",
+	local list = process.run({
+		config.ghCmd,
 		"pr",
 		"list",
 		"--head",
@@ -101,12 +115,23 @@ local function run()
 		"-q",
 		".[0].number",
 	})
+	assert(list.ok, list.stderr)
+	local existing = list.stdout:gsub("%s+$", "")
 
+	-- Argv arrays (not shell strings) so the spaces in the title and body survive.
 	if existing == "" then
-		exec.check({ "gh", "pr", "create", "--base", base, "--head", branch, "--title", prTitle, "--body", body })
+		local create = process.run(
+			{ config.ghCmd, "pr", "create", "--base", base, "--head", branch, "--title", prTitle, "--body", body },
+			{ stdio = "inherit" }
+		)
+		assert(create.ok, create.stderr)
 		print(`Opened publish PR for {nextTag}`)
 	else
-		exec.check({ "gh", "pr", "edit", existing, "--title", prTitle, "--body", body })
+		local edit = process.run(
+			{ config.ghCmd, "pr", "edit", existing, "--title", prTitle, "--body", body },
+			{ stdio = "inherit" }
+		)
+		assert(edit.ok, edit.stderr)
 		print(`Updated publish PR #{existing} for {nextTag}`)
 	end
 end

@@ -1,11 +1,13 @@
 local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local path = require("@std/path")
+local process = require("@std/process")
 
-local cliff = require("@root/release/cliff")
-local exec = require("@root/release/exec")
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
+
+local config = require("@root/config")
+local getLastVersionBumpCommit = require("@root/release/getLastVersionBumpCommit")
 local getTempDir = require("@root/getTempDir")
-local git = require("@root/release/git")
 local types = require("@root/cli/types")
 local version = require("@root/release/version")
 
@@ -27,28 +29,34 @@ local function run()
 	-- Tag the commit that set this version rather than whichever commit happened
 	-- to trip the gate.
 	local sha = assert(
-		git.commitThatSetVersion(current),
+		getLastVersionBumpCommit(current),
 		`Could not find the commit that set version {current} in loom.config.luau`
 	)
 
-	if git.remoteTagExists(tag) then
+	-- A non-zero exit from `ls-remote --exit-code` means the tag isn't on origin.
+	local remoteTag = process.run({ config.gitCmd, "ls-remote", "--exit-code", "origin", `refs/tags/{tag}` })
+	if remoteTag.ok then
 		print(`Tag {tag} already exists on origin`)
 	else
-		exec.check({ "git", "tag", tag, sha })
-		exec.check({ "git", "push", "origin", tag })
+		FlipbookBatteries.run(config.gitCmd, { "tag", tag, sha })
+		FlipbookBatteries.run(config.gitCmd, { "push", "origin", tag })
 		print(`Pushed tag {tag}`)
 	end
 
-	if exec.run({ "gh", "release", "view", tag }).ok then
+	if process.run({ config.ghCmd, "release", "view", tag }).ok then
 		print(`Draft release {tag} already exists`)
 		return
 	end
 
-	local notesPath = tostring(path.join(getTempDir(), "release-notes.md"))
-	fs.writeStringToFile(notesPath, cliff.latestReleaseNotes())
+	-- Render notes for just this release: `--latest` restricts git-cliff to the
+	-- newest tag and `--strip header` drops the changelog preamble.
+	local notes = process.run({ config.gitCliffCmd, "--config", "cliff.toml", "--latest", "--strip", "header" })
+	assert(notes.ok, notes.stderr)
 
-	exec.check({
-		"gh",
+	local notesPath = tostring(path.join(getTempDir(), "release-notes.md"))
+	fs.writeStringToFile(notesPath, (notes.stdout:gsub("%s+$", "")))
+
+	FlipbookBatteries.run(config.ghCmd, {
 		"release",
 		"create",
 		tag,
