@@ -4,7 +4,7 @@ local process = require("@std/process")
 
 local config = require("@root/config")
 local evaluateReleaseGate = require("@root/release/evaluateReleaseGate")
-local loomConfig = require("@repo/loom.config")
+local getCurrentVersion = require("@root/release/getCurrentVersion")
 local types = require("@root/cli/types")
 
 local title = "release gate"
@@ -19,24 +19,30 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = loomConfig.package.version
+	local current = getCurrentVersion()
 	local tag = `v{current}`
+	local forcePublish = parser:has("force-publish")
 
-	-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
-	-- code answers whether the tag exists; `-q` silences the stderr it would print.
-	local tagExists = process.run({ config.gitCmd, "rev-parse", "-q", "--verify", `refs/tags/{tag}` }).ok
-
-	-- Commits between the current version's tag and HEAD; 0 when untagged.
+	-- `--force-publish` publishes the current version unconditionally, so the tag
+	-- and commit-count queries can't change the outcome. Skip them in that case.
+	local tagExists = false
 	local commitsSinceTag = 0
-	if tagExists then
-		local revList = process.run({ config.gitCmd, "rev-list", "--count", `{tag}..HEAD` })
-		assert(revList.ok, revList.stderr)
-		commitsSinceTag = tonumber(revList.stdout) or 0
+	if not forcePublish then
+		-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
+		-- code answers whether the tag exists; `-q` silences the stderr it would print.
+		tagExists = process.run({ config.gitCmd, "rev-parse", "-q", "--verify", `refs/tags/{tag}` }).ok
+
+		-- Commits between the current version's tag and HEAD; 0 when untagged.
+		if tagExists then
+			local revList = process.run({ config.gitCmd, "rev-list", "--count", `{tag}..HEAD` })
+			assert(revList.ok, revList.stderr)
+			commitsSinceTag = tonumber(revList.stdout) or 0
+		end
 	end
 
 	local result = evaluateReleaseGate({
 		version = current,
-		forcePublish = parser:has("force-publish"),
+		forcePublish = forcePublish,
 		tagExists = tagExists,
 		commitsSinceTag = commitsSinceTag,
 	})

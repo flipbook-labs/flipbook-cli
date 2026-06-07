@@ -25,13 +25,21 @@ export type GateResult = {
 
 local function evaluateReleaseGate(input: GateInput): GateResult
 	if input.forcePublish then
-		return { version = input.version, shouldPublish = true, hasChanges = false }
+		return {
+			version = input.version,
+			shouldPublish = true,
+			hasChanges = false,
+		}
 	end
 
 	-- The current version has no matching tag yet: a publish PR merged (the bump
 	-- landed) but nothing has been released, so publish it.
 	if not input.tagExists then
-		return { version = input.version, shouldPublish = true, hasChanges = false }
+		return {
+			version = input.version,
+			shouldPublish = true,
+			hasChanges = false,
+		}
 	end
 
 	-- The current version is already released. Surface whether there are commits

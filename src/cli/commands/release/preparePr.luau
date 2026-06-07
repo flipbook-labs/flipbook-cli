@@ -1,13 +1,16 @@
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local cli = require("@batteries/cli")
 local process = require("@std/process")
 
-local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
-
 local config = require("@root/config")
+local getCurrentVersion = require("@root/release/getCurrentVersion")
 local getNextVersion = require("@root/release/getNextVersion")
-local loomConfig = require("@repo/loom.config")
 local types = require("@root/cli/types")
 local writeVersion = require("@root/release/writeVersion")
+
+local run = FlipbookBatteries.run
+
+type BumpKind = getNextVersion.BumpKind
 
 local title = "release prepare-pr"
 local summary = "Bump the version, regenerate the changelog, and open/update the publish PR."
@@ -19,7 +22,7 @@ local GIT_AUTHOR_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com"
 
 local parser = cli.parser()
 parser:add("bump", "option", {
-	help = "Which semver component to bump when preparing the next release (minor | patch).",
+	help = "Which semver component to bump when preparing the next release (major | minor | patch).",
 	default = "minor",
 })
 parser:add("base", "option", {
@@ -44,9 +47,20 @@ local function repoSlug(): string
 	return (result.stdout:gsub("%s+$", ""))
 end
 
-local function run()
-	local current = loomConfig.package.version
-	local bumpKind: getNextVersion.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
+local function preparePr()
+	local current = getCurrentVersion()
+
+	local bumpOption = parser:get("bump")
+	local bumpKind: BumpKind
+	if bumpOption == "major" then
+		bumpKind = "major"
+	elseif bumpOption == "patch" then
+		bumpKind = "patch"
+	elseif bumpOption == "minor" then
+		bumpKind = "minor"
+	else
+		error(`Unknown bump kind "{bumpOption}" (expected major, minor, or patch)`)
+	end
 
 	-- `rev-parse --verify` exits non-zero when the ref is missing, so its exit
 	-- code answers whether the tag exists; `-q` silences the stderr it would print.
@@ -59,16 +73,13 @@ local function run()
 
 	writeVersion(nextVersion)
 	-- Regenerate the full changelog, treating unreleased commits as `nextTag`.
-	FlipbookBatteries.run(
-		config.gitCliffCmd,
-		{ "--config", "cliff.toml", "--tag", nextTag, "--output", "CHANGELOG.md" }
-	)
+	run(config.gitCliffCmd, { "--config", "cliff.toml", "--tag", nextTag, "--output", "CHANGELOG.md" })
 
 	local base = parser:get("base") :: string
 	local branch = parser:get("branch") :: string
 
-	FlipbookBatteries.run(config.gitCmd, { "switch", "-C", branch })
-	FlipbookBatteries.run(config.gitCmd, { "add", "CHANGELOG.md", "loom.config.luau" })
+	run(config.gitCmd, { "switch", "-C", branch })
+	run(config.gitCmd, { "add", "CHANGELOG.md", "loom.config.luau" })
 
 	-- Argv array (not a shell string) so the spaces in the commit message and
 	-- author config aren't word-split.
@@ -84,12 +95,12 @@ local function run()
 	}, { stdio = "inherit" })
 	assert(commit.ok, commit.stderr)
 
-	FlipbookBatteries.run(config.gitCmd, { "push", "--force", "origin", branch })
+	run(config.gitCmd, { "push", "--force", "origin", branch })
 
 	local server = process.env.GITHUB_SERVER_URL or "https://github.com"
 	local releaseUrl = `{server}/{repoSlug()}/releases/tag/{nextTag}`
 	local prTitle = `[AUTO-GENERATED] Publish {nextTag}`
-	local body = table.concat({
+	local prBody = table.concat({
 		">[!IMPORTANT]",
 		"> This PR prepares the next release by bumping the version and updating the changelog.",
 		">",
@@ -126,14 +137,14 @@ local function run()
 	-- Argv arrays (not shell strings) so the spaces in the title and body survive.
 	if existing == "" then
 		local create = process.run(
-			{ config.ghCmd, "pr", "create", "--base", base, "--head", branch, "--title", prTitle, "--body", body },
+			{ config.ghCmd, "pr", "create", "--base", base, "--head", branch, "--title", prTitle, "--body", prBody },
 			{ stdio = "inherit" }
 		)
 		assert(create.ok, create.stderr)
 		print(`Opened publish PR for {nextTag}`)
 	else
 		local edit = process.run(
-			{ config.ghCmd, "pr", "edit", existing, "--title", prTitle, "--body", body },
+			{ config.ghCmd, "pr", "edit", existing, "--title", prTitle, "--body", prBody },
 			{ stdio = "inherit" }
 		)
 		assert(edit.ok, edit.stderr)
@@ -142,7 +153,7 @@ local function run()
 end
 
 local command: types.Command = {
-	run = run,
+	run = preparePr,
 	title = title,
 	summary = summary,
 	parser = parser,

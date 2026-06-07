@@ -109,8 +109,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # `release publish` shells out to git-cliff for the release notes, which
-      # Rokit provides.
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0

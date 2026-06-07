@@ -2,6 +2,7 @@ local process = require("@std/process")
 local richterm = require("@batteries/richterm")
 
 local helpText = require("@root/cli/helpText")
+local runCommand = require("@root/cli/runCommand")
 local types = require("@root/cli/types")
 
 local attachCommand = require("@self/attach")
@@ -55,7 +56,7 @@ end
 local function run(args: { string })
 	local subName, index = findSubcommand(args)
 
-	if not subName or subName == "help" then
+	if not subName or not index or subName == "help" then
 		printRootHelp()
 		return
 	end
@@ -70,26 +71,9 @@ local function run(args: { string })
 
 	-- Hand the subcommand only the args after its name so its parser sees a clean
 	-- argument list (and variadics aren't polluted by `release`/the name itself).
-	local subArgs = table.move(args, (index :: number) + 1, #args, 1, {})
+	local subArgs = table.move(args, index + 1, #args, 1, {})
 
-	local parser = command.parser
-	if parser then
-		local ok, err = pcall(parser.parse, parser, subArgs)
-		if not ok then
-			local message = tostring(err):match(":%d+: (.+)$") or tostring(err)
-			print(richterm.red("Error: " .. message))
-			print()
-			helpText.print(parser, { title = command.title, summary = command.summary })
-			process.exit(1)
-		end
-
-		if parser:has("help") then
-			helpText.print(parser, { title = command.title, summary = command.summary })
-			process.exit(0)
-		end
-	end
-
-	command.run(subArgs)
+	runCommand(command, subArgs)
 end
 
 local command: types.Command = {

@@ -1,14 +1,13 @@
+local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
 
-local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
-
 local config = require("@root/config")
+local getCurrentVersion = require("@root/release/getCurrentVersion")
 local getLastVersionBumpCommit = require("@root/release/getLastVersionBumpCommit")
 local getTempDir = require("@root/getTempDir")
-local loomConfig = require("@repo/loom.config")
 local types = require("@root/cli/types")
 
 local title = "release publish"
@@ -23,7 +22,7 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = parser:get("version") or loomConfig.package.version
+	local current = parser:get("version") or getCurrentVersion()
 	local tag = `v{current}`
 
 	-- Tag the commit that set this version rather than whichever commit happened
