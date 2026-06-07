@@ -24,16 +24,20 @@ local function publishPlaceAsync(universeId: number, placeId: number, rbxlPath: 
 	-- Roblox answers a publish request with 409 Conflict when the place is locked,
 	-- which is nearly always because it's still open in Studio. The raw status line
 	-- doesn't say that, so point the user at the actual fix.
+	-- fetch formats the failure as "{status} {body} when attempting to ...", so the
+	-- status leads the string. Match "409 " (with the trailing space) so a place or
+	-- universe id that happens to contain "409" in the URL can't trigger a false match.
 	local message = tostring(err)
-	if string.find(message, "409", 1, true) then
+	if string.find(message, "409 ", 1, true) then
 		error(
 			`Could not publish place {placeId}: Roblox returned 409 Conflict. The place is probably open in `
 				.. `Roblox Studio, which locks it for publishing — close it there and run this again.\n\n{message}`,
-			2
+			-- fetch already baked a location into the message; level 0 avoids stacking another on top.
+			0
 		)
 	end
 
-	error(message, 2)
+	error(message, 0)
 end
 
 return publishPlaceAsync
