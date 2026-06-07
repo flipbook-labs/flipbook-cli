@@ -151,7 +151,7 @@ local function preparePr()
 		"--json",
 		"number",
 		"-q",
-		".[0].number",
+		".[0].number // empty",
 	})
 	assert(list.ok, list.stderr)
 	local existing = list.stdout:gsub("%s+$", "")
