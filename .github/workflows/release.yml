@@ -39,7 +39,11 @@ jobs:
 
       - name: Evaluate release action
         id: eval
-        run: lute cli.luau release gate ${{ inputs.force_publish && '--force-publish' || '' }}
+        run: |
+          set -euo pipefail
+          result="$(lute cli.luau release gate ${{ inputs.force_publish && '--force-publish' || '' }})"
+          echo "$result"
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
 
   publish-release:
     needs: gate

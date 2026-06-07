@@ -76,7 +76,7 @@ and [`gh`](https://cli.github.com/) (authenticated via `GH_TOKEN`/`GITHUB_TOKEN`
 
 | Subcommand   | Description                                                                                      |
 | ------------ | ------------------------------------------------------------------------------------------------ |
-| `gate`       | Decide whether to publish the current version or prepare the next one. Writes GitHub step outputs (`version`, `should_publish`, `has_changes`) when `$GITHUB_OUTPUT` is set. Pass `--force-publish` to publish regardless of repo state. |
+| `gate`       | Decide whether to publish the current version or prepare the next one. Prints the decision as JSON (`version`, `should_publish`, `has_changes`) for the caller to parse. Pass `--force-publish` to publish regardless of repo state. |
 | `publish`    | Tag the current version's commit, push the tag, and open a draft GitHub release with git-cliff-generated notes. |
 | `attach`     | Upload build artifacts to the draft release for a tag (skips non-draft releases).                |
 | `prepare-pr` | Bump the version, regenerate `CHANGELOG.md`, and open/update the `publish-next-version` PR.       |
