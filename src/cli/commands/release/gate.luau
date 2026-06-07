@@ -3,10 +3,10 @@ local json = require("@std/json")
 local process = require("@std/process")
 
 local config = require("@root/config")
-local gate = require("@root/release/gate")
+local currentVersion = require("@root/release/currentVersion")
+local evaluateGate = require("@root/release/evaluateGate")
 local tagExists = require("@root/release/tagExists")
 local types = require("@root/cli/types")
-local version = require("@root/release/version")
 
 local title = "release gate"
 local summary = "Decide whether to publish the current version or prepare the next one."
@@ -20,7 +20,7 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = version.current
+	local current = currentVersion
 	local tag = `v{current}`
 
 	-- Commits between the current version's tag and HEAD; 0 when untagged.
@@ -32,7 +32,7 @@ local function run()
 		commitsSinceTag = tonumber(revList.stdout) or 0
 	end
 
-	local result = gate.evaluate({
+	local result = evaluateGate({
 		version = current,
 		forcePublish = parser:has("force-publish"),
 		tagExists = tagged,

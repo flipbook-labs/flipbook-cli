@@ -3,10 +3,12 @@ local process = require("@std/process")
 
 local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 
+local bumpVersion = require("@root/release/bumpVersion")
 local config = require("@root/config")
+local currentVersion = require("@root/release/currentVersion")
 local tagExists = require("@root/release/tagExists")
 local types = require("@root/cli/types")
-local version = require("@root/release/version")
+local writeVersion = require("@root/release/writeVersion")
 
 local title = "release prepare-pr"
 local summary = "Bump the version, regenerate the changelog, and open/update the publish PR."
@@ -44,15 +46,15 @@ local function repoSlug(): string
 end
 
 local function run()
-	local current = version.current
-	local bumpKind: version.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
+	local current = currentVersion
+	local bumpKind: bumpVersion.BumpKind = if parser:get("bump") == "patch" then "patch" else "minor"
 
 	-- If the current version is already tagged, bump to the next one; otherwise
 	-- the version hasn't been released yet, so prepare a PR for it as-is.
-	local nextVersion = if tagExists(`v{current}`) then version.bump(current, bumpKind) else current
+	local nextVersion = if tagExists(`v{current}`) then bumpVersion(current, bumpKind) else current
 	local nextTag = `v{nextVersion}`
 
-	version.write(nextVersion)
+	writeVersion(nextVersion)
 	-- Regenerate the full changelog, treating unreleased commits as `nextTag`.
 	FlipbookBatteries.run(
 		config.gitCliffCmd,

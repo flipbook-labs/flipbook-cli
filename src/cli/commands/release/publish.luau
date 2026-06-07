@@ -6,10 +6,10 @@ local process = require("@std/process")
 local FlipbookBatteries = require("@pkg/flipbook-batteries@v0.9.0")
 
 local config = require("@root/config")
+local currentVersion = require("@root/release/currentVersion")
 local getLastVersionBumpCommit = require("@root/release/getLastVersionBumpCommit")
 local getTempDir = require("@root/getTempDir")
 local types = require("@root/cli/types")
-local version = require("@root/release/version")
 
 local title = "release publish"
 local summary = "Tag the current version and open a draft GitHub release with generated notes."
@@ -23,7 +23,7 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local current = parser:get("version") or version.current
+	local current = parser:get("version") or currentVersion
 	local tag = `v{current}`
 
 	-- Tag the commit that set this version rather than whichever commit happened
