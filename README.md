@@ -34,8 +34,8 @@ When configuring the key, restrict both API systems by experience and select you
 Publish a pre-built `.rbxl` place file to a named place in your universe, then inject the Flipbook runtime. The place is resolved by name, or created if it does not exist yet.
 
 ```sh
-flipbook-cli deploy --universe-id 123 --place-name main --place-file out.rbxl
-flipbook-cli deploy --universe-id 123 --place-name pr-42 --place-file out.rbxl
+flipbook-cli deploy --universe-id 123 --place-name "Flipbook Stories" --place-file out.rbxl
+flipbook-cli deploy --universe-id 123 --place-name "Flipbook Stories 123" --place-file out.rbxl
 ```
 
 | Flag              | Description                                                                                 |
@@ -60,7 +60,7 @@ Each deploy:
 Post or update the storybook preview comment on a pull request. Resolves the place by name (same as deploy) to build the preview link.
 
 ```sh
-flipbook-cli comment --pr 42 --universe-id 123 --place-name pr-42
+flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123"
 ```
 
 | Flag                  | Description                                                          |
