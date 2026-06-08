@@ -196,10 +196,6 @@ jobs:
         with:
           name: flipbook-cli
 
-      # `release prepare-pr` bumps the version and regenerates the changelog,
-      # leaving both staged in the working tree, and prints the next version as
-      # JSON. peter-evans/create-pull-request below commits those changes and
-      # owns the PR itself.
       - name: Prepare release changes
         id: prepare
         run: |
@@ -213,8 +209,9 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           # Push as the GitHub App rather than the default GITHUB_TOKEN so the
-          # branch push triggers CI on the publish PR (pushes made with
-          # GITHUB_TOKEN do not trigger further workflow runs).
+          # branch push triggers CI on the publish PR. Pushes made with
+          # GITHUB_TOKEN do not trigger further workflow runs.
+          # Read more: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow
           token: ${{ steps.app-token.outputs.token }}
           base: ${{ github.ref_name }}
           branch: publish-next-version
