@@ -23,9 +23,9 @@ API key access permissions:
 - `universe.place.luau-execution-session:read`
 - `universe.place.luau-execution-session:write`
 
-When configuring the key, restrict both API systems by experience and select the Flipbook experience:
+When configuring the key, restrict both API systems by experience and select your storybook experience. The screenshot below is only an example of the required permissions:
 
-![Open Cloud access permissions for flipbook-cli](img/access-permissions-example.png)
+![Example Open Cloud access permissions for flipbook-cli](img/access-permissions-example.png)
 
 ## Commands
 
