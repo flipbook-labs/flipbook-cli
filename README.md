@@ -86,7 +86,7 @@ and [`gh`](https://cli.github.com/) (authenticated via `GH_TOKEN`/`GITHUB_TOKEN`
 | `gate`       | Decide whether to publish the current version or prepare the next one. Prints the decision as JSON (`version`, `should_publish`, `has_changes`) for the caller to parse. Pass `--force-publish` to publish regardless of repo state. |
 | `draft`      | Tag the current version's commit, push the tag, and open a draft GitHub release with git-cliff-generated notes. |
 | `attach`     | Upload build artifacts to the draft release for a tag (skips non-draft releases).                |
-| `prepare-pr` | Bump the version, regenerate `CHANGELOG.md`, and open/update the `publish-next-version` PR.       |
+| `prepare-pr` | Bump the version and regenerate `CHANGELOG.md`, leaving both modified in the working tree. Prints the next version as JSON (`version`); the caller stages, commits, and opens the publish PR. |
 
 ```sh
 flipbook-cli release gate
