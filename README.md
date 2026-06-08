@@ -68,14 +68,6 @@ flipbook-cli comment --pr 42 --universe-id 123 --place-name pr-42
 | `--github-token`      | GitHub token. Falls back to the `GITHUB_TOKEN` env var.            |
 | `--github-repository` | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.       |
 
-### `yank`
-
-Publish an empty place to clear a closed PR preview. Roblox does not expose place deletion; this overwrites the place contents.
-
-```sh
-flipbook-cli yank --name pr-42
-```
-
 ### `release`
 
 Manage the project's own release lifecycle. The version in `loom.config.luau` is
