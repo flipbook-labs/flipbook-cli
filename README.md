@@ -13,15 +13,19 @@ rokit add flipbook-labs/flipbook-cli
 1. Create a Roblox **experience** in Creator Hub.
 2. Copy the **universe ID** and the **start place ID** (the place created with the experience, or your chosen root place).
 3. Enable **Allow Copying** on the start place if you will create per-PR preview places (`CreatePlaceAsync` clones from it).
-4. Set your Open Cloud API key (or store it as a GitHub Actions secret):
-
-| Variable         | Description        |
-| ---------------- | ------------------ |
-| `ROBLOX_API_KEY` | Open Cloud API key |
+4. Create an Open Cloud API key. Pass it with `--api-key`, set `ROBLOX_API_KEY`, or store it as a GitHub Actions secret for workflows.
 
 The universe and target place are passed per command via `--universe-id` and (optionally) `--place-id`.
 
-API key scopes: `universe.place.luau-execution-session:write`, `universe-places` write.
+API key access permissions:
+
+- `universe-places:write`
+- `universe.place.luau-execution-session:read`
+- `universe.place.luau-execution-session:write`
+
+When configuring the key, restrict both API systems by experience and select the Flipbook experience:
+
+![Open Cloud access permissions for flipbook-cli](img/access-permissions-example.png)
 
 ## Commands
 
