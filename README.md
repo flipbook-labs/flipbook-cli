@@ -13,57 +13,64 @@ rokit add flipbook-labs/flipbook-cli
 1. Create a Roblox **experience** in Creator Hub.
 2. Copy the **universe ID** and the **start place ID** (the place created with the experience, or your chosen root place).
 3. Enable **Allow Copying** on the start place if you will create per-PR preview places (`CreatePlaceAsync` clones from it).
-4. Set environment variables (or GitHub Actions secrets):
+4. Create an Open Cloud API key. Pass it with `--api-key`, set `ROBLOX_API_KEY`, or store it as a GitHub Actions secret for workflows.
 
-| Variable                       | Description                 |
-| ------------------------------ | --------------------------- |
-| `ROBLOX_STORYBOOK_UNIVERSE_ID` | Experience (universe) ID    |
-| `ROBLOX_STORYBOOK_PLACE_ID`    | Root / main storybook place |
-| `ROBLOX_API_KEY`               | Open Cloud API key          |
+The universe and target place are passed per command via `--universe-id` and (optionally) `--place-id`.
 
-API key scopes: `universe.place.luau-execution-session:write`, `universe-places` write.
+API key access permissions:
+
+- `universe-places:write`
+- `universe.place.luau-execution-session:read`
+- `universe.place.luau-execution-session:write`
+
+When configuring the key, restrict both API systems by experience and select your storybook experience. The screenshot below is only an example of the required permissions:
+
+![Example Open Cloud access permissions for flipbook-cli](img/access-permissions-example.png)
 
 ## Commands
 
 ### `deploy`
 
-Build a place (Rojo project generated at deploy time), resolve or create a named place, and publish.
+Publish a pre-built `.rbxl` place file to a named place in your universe, then inject the Flipbook runtime. The place is resolved by name, or created if it does not exist yet.
 
 ```sh
-flipbook-cli deploy --name main
-flipbook-cli deploy --name pr-42 --stories ./out/stories.rbxm
-flipbook-cli deploy --name main --dry-run out.rbxl
+flipbook-cli deploy --universe-id 123 --place-name "Flipbook Stories" --place-file out.rbxl
+flipbook-cli deploy --universe-id 123 --place-name "Flipbook Stories 123" --place-file out.rbxl
 ```
 
-| Flag              | Description                                                                   |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `--name`          | Place name (`main` → start place; other names resolve/create in the universe) |
-| `--stories`       | Optional `.rbxm` or directory mounted as `ReplicatedStorage.Stories`          |
-| `--flipbook-rbxm` | Path to a local `Flipbook.rbxm` (skips GitHub download)                       |
-| `--dry-run`       | Write `.rbxl` locally only; skip Open Cloud publish                           |
+| Flag              | Description                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `--place-name`    | **Required.** Name of the place to update or create for this deployment.                     |
+| `--universe-id`   | **Required.** Universe to deploy to.                                                         |
+| `--place-file`    | **Required.** Path to an `.rbxl` place file containing your storybooks and stories.          |
+| `--api-key`       | Roblox API key. Falls back to the `ROBLOX_API_KEY` env var.                                  |
+| `--place-id`      | Publish to a specific place ID instead of resolving by name. Disambiguates same-named places. |
+| `--flipbook-rbxm` | Path to a local `Flipbook.rbxm` to use as the runtime. Defaults to the latest GitHub release. |
 
-Each deploy produces a place with:
+Each deploy:
 
-- `ReplicatedStorage.Flipbook` — `Flipbook.rbxm` from the latest [GitHub release](https://github.com/flipbook-labs/flipbook/releases) (cached under `system.tmpdir()/flipbook-cli/`)
-- `ReplicatedStorage.Stories` — optional story payload (`.rbxm` or directory)
+- resolves `--place-name` to a place in the universe (creating it via `CreatePlaceAsync` from the start place if needed),
+- publishes `--place-file` to that place, and
+- injects `ReplicatedStorage.Flipbook` from the latest [GitHub release](https://github.com/flipbook-labs/flipbook/releases) (or `--flipbook-rbxm`), downloaded to `system.tmpdir()/flipbook-cli/`.
 
-Place lookup uses Roblox as the source of truth (by place name). No local place registry.
+`ReplicatedStorage.Stories` (and the rest of the storybook) comes from whatever is in `--place-file`. Place lookup uses Roblox as the source of truth (by place name). No local place registry.
 
 ### `comment`
 
-Post or update a PR preview comment. Resolves the place by name via Luau Execution (same as deploy).
+Post or update the storybook preview comment on a pull request. Resolves the place by name (same as deploy) to build the preview link.
 
 ```sh
-flipbook-cli comment --pr 42 --name pr-42
+flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123"
 ```
 
-### `yank`
-
-Publish an empty place to clear a closed PR preview. Roblox does not expose place deletion; this overwrites the place contents.
-
-```sh
-flipbook-cli yank --name pr-42
-```
+| Flag                  | Description                                                          |
+| --------------------- | ------------------------------------------------------------------ |
+| `--pr`                | **Required.** Pull request number to comment on.                    |
+| `--universe-id`       | **Required.** Universe the preview place lives in.                  |
+| `--place-name`        | **Required.** Name of the deployed preview place.                  |
+| `--api-key`           | Roblox API key. Falls back to the `ROBLOX_API_KEY` env var.        |
+| `--github-token`      | GitHub token. Falls back to the `GITHUB_TOKEN` env var.            |
+| `--github-repository` | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.       |
 
 ### `release`
 
@@ -90,10 +97,10 @@ flipbook-cli release prepare-pr --bump minor
 
 ## Environment variables
 
-| Variable                       | Description                                                  |
-| ------------------------------ | ------------------------------------------------------------ |
-| `ROBLOX_API_KEY`               | Required for publish / Luau Execution                        |
-| `ROBLOX_STORYBOOK_UNIVERSE_ID` | Experience ID                                                |
-| `ROBLOX_STORYBOOK_PLACE_ID`    | Main place; Luau Execution host; `CreatePlaceAsync` template |
-| `GITHUB_TOKEN`                 | Optional; GitHub API auth for release fetch and `comment`    |
-| `GITHUB_REPOSITORY`            | For `comment`                                                |
+| Variable            | Description                                                          |
+| ------------------- | ------------------------------------------------------------------- |
+| `ROBLOX_API_KEY`    | Open Cloud API key; fallback for `--api-key` on every command        |
+| `GITHUB_TOKEN`      | GitHub API auth for the Flipbook release fetch and `comment`         |
+| `GITHUB_REPOSITORY` | `owner/repo`; fallback for `--github-repository` on `comment`        |
+
+The release commands also honor command-path overrides: `FLIPBOOK_ROJO_CMD`, `FLIPBOOK_GIT_CMD`, `FLIPBOOK_GH_CMD`, and `FLIPBOOK_GIT_CLIFF_CMD` (default to `rojo`, `git`, `gh`, and `git-cliff`).
