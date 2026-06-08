@@ -33,9 +33,31 @@ parser:add("branch", "option", {
 	help = "Head branch for the publish PR.",
 	default = "publish-next-version",
 })
+parser:add("template", "option", {
+	help = "Markdown body for the publish PR. `{{version}}` is replaced with the next version "
+		.. "and `{{releaseUrl}}` with the URL of its release. Falls back to a built-in body.",
+})
 parser:add("help", "flag", {
 	help = "Show this help message",
 })
+
+-- The publish PR body, used when `--template` isn't supplied. The workflow that
+-- drives this command passes its own template so it can fold in run-specific
+-- context (e.g. a link back to the Actions run) that the CLI has no way to know.
+local DEFAULT_PR_TEMPLATE = table.concat({
+	">[!IMPORTANT]",
+	"> This PR prepares the next release by bumping the version and updating the changelog.",
+	">",
+	"> **Merging this PR will:**",
+	">",
+	"> 1. Create and push tag `v{{version}}`",
+	"> 2. Create a draft GitHub release for that tag",
+	"> 3. Trigger binary builds for macOS, Linux, and Windows",
+	"> 4. Attach release assets to the draft release",
+	"",
+	"Next release will be available here: ",
+	"{{releaseUrl}}",
+}, "\n")
 
 local function getRepoSlug(): string
 	if process.env.GITHUB_REPOSITORY then
@@ -123,20 +145,8 @@ local function preparePr()
 	local server = process.env.GITHUB_SERVER_URL or "https://github.com"
 	local releaseUrl = `{server}/{getRepoSlug()}/releases/tag/{nextTag}`
 	local prTitle = `[AUTO-GENERATED] Publish {nextTag}`
-	local prBody = table.concat({
-		">[!IMPORTANT]",
-		"> This PR prepares the next release by bumping the version and updating the changelog.",
-		">",
-		"> **Merging this PR will:**",
-		">",
-		`> 1. Create and push tag \`{nextTag}\``,
-		"> 2. Create a draft GitHub release for that tag",
-		"> 3. Trigger binary builds for macOS, Linux, and Windows",
-		"> 4. Attach release assets to the draft release",
-		"",
-		"Next release will be available here: ",
-		releaseUrl,
-	}, "\n")
+	local template = (parser:get("template") :: string?) or DEFAULT_PR_TEMPLATE
+	local prBody = template:gsub("{{version}}", nextVersion):gsub("{{releaseUrl}}", releaseUrl)
 
 	-- Update the existing publish PR in place if there is one, otherwise open it.
 	local list = process.run({
