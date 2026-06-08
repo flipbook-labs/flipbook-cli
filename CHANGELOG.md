@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.5.0
+
+### Changes
+
+- Update README for correctness and remove the yank command (#42) ([b93dae6](https://github.com/flipbook-labs/flipbook-cli/commit/b93dae6c69d5550bcfdd3c0c80309928f50c2385))
+
+- Explain the likely cause when publishing returns 409 Conflict (#40) ([da2f3be](https://github.com/flipbook-labs/flipbook-cli/commit/da2f3be322594c5e34713bb0ae5a643f21e58503))
+
+- Add `flipbook-cli release` subcommands for the release lifecycle (#38) ([6976536](https://github.com/flipbook-labs/flipbook-cli/commit/6976536b7a9d01df521c6ba310be902d2accef1a))
+
+
+
 ## v0.4.0
 
 ### Changes
