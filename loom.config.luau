@@ -1,7 +1,7 @@
 return {
 	package = {
 		name = "flipbook-cli",
-		version = "0.4.0",
+		version = "0.5.0",
 		dependencies = {
 			["flipbook-batteries"] = {
 				rev = "v0.9.0",
