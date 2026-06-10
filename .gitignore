@@ -1,6 +1,5 @@
 
 build/
-packages/
 .env*
 !.env.template
 loom.lock.luau
