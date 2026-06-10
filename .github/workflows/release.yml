@@ -224,7 +224,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.FLIPBOOK_BACKEND_APP_ID }}
+          client-id: ${{ secrets.FLIPBOOK_BACKEND_APP_ID }}
           private-key: ${{ secrets.FLIPBOOK_BACKEND_APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v6
@@ -254,7 +254,9 @@ jobs:
           chmod +x flipbook-cli
           result="$(./flipbook-cli release prepare-pr)"
           echo "$result"
-          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
+          # `release prepare-pr` shells out to git-cliff, whose command echo lands
+          # on stdout ahead of the JSON result; keep only the final JSON line.
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$(tail -n1 <<< "$result")" >> "$GITHUB_OUTPUT"
 
       # Preview the release this PR will produce, rendered by the same command
       # that will populate the real release notes (`release notes` shares its
