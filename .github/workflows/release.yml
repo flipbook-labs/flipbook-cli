@@ -138,7 +138,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Checkout so `gh` can infer the repository from the origin remote.
       - uses: actions/checkout@v6
 
       - name: Download flipbook-cli
