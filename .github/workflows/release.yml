@@ -1,23 +1,17 @@
 name: Release
 
-# The release lifecycle lives in the `flipbook-cli release` subcommands (gate,
-# draft, attach, publish, prepare-pr). This workflow builds the binary once and
-# then runs those subcommands against the built artifact, exercising the real
-# binary the way a user would rather than running the source through Lute.
-
 on:
   push:
     branches: [main]
-  # Debugging escape hatch: label a PR `debug:release-pr` to build the binary and
-  # open a *throwaway* debug PR (see `prepare-release-pr`) that previews the
-  # regenerated changelog / version bump before this PR lands. The `labeled` type
-  # makes adding the label re-trigger. Without the label every job below skips, so
-  # a normal PR never spins up the release build matrix (PR validation is already
-  # covered by ci.yml). The side-effecting jobs are additionally guarded with
-  # `github.event_name != 'pull_request'`, so even a labeled PR can never tag,
-  # draft, attach, or publish a real release.
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [
+        opened,
+        synchronize,
+        reopened,
+        # We include `labeled` so that tagging the PR with `debug:release-pr`
+        # will trigger a debug version of the release workflow.
+        labeled,
+      ]
   workflow_dispatch:
     inputs:
       force_publish:
@@ -28,7 +22,6 @@ on:
 jobs:
   build:
     name: build (${{ matrix.os }})
-    # On PRs, only build when the debug label is present; see the `on:` comment.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'debug:release-pr')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
@@ -236,13 +229,11 @@ jobs:
           # PR as it would look once this PR merges).
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
 
-      # `release prepare-pr` shells out to git-cliff to regenerate the changelog,
-      # which Rokit provides.
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
 
-      - name: Download flipbook-cli
+      - name: Download our build of flipbook-cli
         uses: actions/download-artifact@v8
         with:
           name: flipbook-cli
@@ -258,11 +249,7 @@ jobs:
           # on stdout ahead of the JSON result; keep only the final JSON line.
           jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$(tail -n1 <<< "$result")" >> "$GITHUB_OUTPUT"
 
-      # Preview the release this PR will produce, rendered by the same command
-      # that will populate the real release notes (`release notes` shares its
-      # renderer with `release draft`), so the preview can't drift. The tag does
-      # not exist yet here, so it renders the not-yet-released commits.
-      - name: Render release notes preview
+      - name: Render preview of release notes
         id: notes
         run: |
           set -euo pipefail
@@ -272,30 +259,24 @@ jobs:
             echo '__RELEASE_NOTES_EOF__'
           } >> "$GITHUB_OUTPUT"
 
-      # One PR-generation step for both the real publish PR and the debug PR; the
-      # only difference is the branch it pushes to. A debug run (a labeled PR)
-      # targets a separate `debug-*` branch so it can never touch the real
-      # `publish-next-version` PR.
       - name: Create or update publish PR
         uses: peter-evans/create-pull-request@v7
         with:
           # Push as the GitHub App rather than the default GITHUB_TOKEN so the
           # branch push triggers CI on the publish PR. Pushes made with
           # GITHUB_TOKEN do not trigger further workflow runs.
-          # Read more: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow
+          #
+          # [Read more](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow)
           token: ${{ steps.app-token.outputs.token }}
           base: main
           branch: ${{ github.event_name == 'pull_request' && 'debug-publish-next-version' || 'publish-next-version' }}
           draft: true
           commit-message: Publish v${{ steps.prepare.outputs.version }}
-          title: "${{ github.event_name == 'pull_request' && '[DEBUG]' || '[AUTO-GENERATED]' }} Publish v${{ steps.prepare.outputs.version }}"
+          title: ${{ github.event_name == 'pull_request' && '[DEBUG]' || '' }} Publish v${{ steps.prepare.outputs.version }}
           add-paths: |
             CHANGELOG.md
             loom.config.luau
           body: |
-            ${{ github.event_name == 'pull_request' && '> [!WARNING]' || '' }}
-            ${{ github.event_name == 'pull_request' && '> Debug preview — do not merge.' || '' }}
-
             >[!IMPORTANT]
             > This PR prepares the next release by bumping the version and updating the changelog.
             >
@@ -307,15 +288,17 @@ jobs:
             > 4. Attach the build artifacts to the release
             > 5. Publish the release once the artifacts are attached
 
-            ## Release preview
+            <details>
+            <summary>## Release preview</summary>
 
             Once merged and published, the GitHub release will look like this:
 
-            **Title:** v${{ steps.prepare.outputs.version }} &nbsp;·&nbsp; **Tag:** `v${{ steps.prepare.outputs.version }}`
+            **Title:** v${{ steps.prepare.outputs.version }}
+
+            **Tag:** `v${{ steps.prepare.outputs.version }}`
 
             ${{ steps.notes.outputs.body }}
-
-            ---
+            </details>
 
             Next release will be available here:
             ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.prepare.outputs.version }}
