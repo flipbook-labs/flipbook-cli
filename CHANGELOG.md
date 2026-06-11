@@ -3,9 +3,19 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.6.0
+
+### Changes
+
+- Automate release publishing and preview release notes in the publish PR (#44) ([d8bf232](https://github.com/flipbook-labs/flipbook-cli/commit/d8bf232bbf104285eb579e1ca23f61b413d849fb))
+
+
+
 ## v0.5.0
 
 ### Changes
+
+- Restore create-pull-request action; strip prepare-pr to file edits + JSON output (#41) ([8ff110b](https://github.com/flipbook-labs/flipbook-cli/commit/8ff110b48c07bd0285ab86c95797384b4060e462))
 
 - Update README for correctness and remove the yank command (#42) ([b93dae6](https://github.com/flipbook-labs/flipbook-cli/commit/b93dae6c69d5550bcfdd3c0c80309928f50c2385))
 
