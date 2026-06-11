@@ -160,9 +160,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Take the release live only after its binaries are attached, so consumers
-  # never see a published release with missing downloads. Publishing fires the
-  # `release: published` event for any downstream automation.
   publish:
     needs: [build, gate, attach]
     if: github.event_name != 'pull_request' && needs.gate.outputs.should_publish == 'true'
@@ -171,7 +168,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Checkout so `gh` can infer the repository from the origin remote.
       - uses: actions/checkout@v6
 
       - name: Download flipbook-cli
@@ -297,13 +293,13 @@ jobs:
             > 5. Publish the release once the artifacts are attached
 
             <details>
-            <summary>## Release preview</summary>
+            <summary>GitHub Release preview</summary>
 
             Once merged and published, the GitHub release will look like this:
 
-            **Title:** v${{ steps.prepare.outputs.version }}
+            # v${{ steps.prepare.outputs.version }}
 
-            **Tag:** `v${{ steps.prepare.outputs.version }}`
+            **github-actions** released this 0 seconds ago 🔒 Immutable 🏷️ v${{ steps.prepare.outputs.version }} 🔗 SHA
 
             ${{ steps.notes.outputs.body }}
             </details>
