@@ -3,9 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.6.0
+
+### Changes
+
+- Open the publish and debug PRs as drafts ([708c279](https://github.com/flipbook-labs/flipbook-cli/commit/708c2794e40fa3a344492c3a7f4dc3bc0e8bf0d9))
+
+- Fix release PR prep parsing and silence app-token deprecation ([88f4683](https://github.com/flipbook-labs/flipbook-cli/commit/88f46833210147d8327ca5efe94aad7314348161))
+
+- Automate release publishing and preview release notes in the publish PR ([a23f79e](https://github.com/flipbook-labs/flipbook-cli/commit/a23f79e4f9b2d55e156c9479b1531f59989fb34d))
+
+
+
 ## v0.5.0
 
 ### Changes
+
+- Restore create-pull-request action; strip prepare-pr to file edits + JSON output (#41) ([8ff110b](https://github.com/flipbook-labs/flipbook-cli/commit/8ff110b48c07bd0285ab86c95797384b4060e462))
 
 - Update README for correctness and remove the yank command (#42) ([b93dae6](https://github.com/flipbook-labs/flipbook-cli/commit/b93dae6c69d5550bcfdd3c0c80309928f50c2385))
 
