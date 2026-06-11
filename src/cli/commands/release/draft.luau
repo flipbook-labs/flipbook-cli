@@ -8,6 +8,7 @@ local config = require("@root/config")
 local getCurrentVersion = require("@root/release/getCurrentVersion")
 local getLastVersionBumpCommit = require("@root/release/getLastVersionBumpCommit")
 local getTempDir = require("@root/getTempDir")
+local renderReleaseNotes = require("@root/release/renderReleaseNotes")
 local types = require("@root/cli/types")
 
 local run = FlipbookBatteries.run
@@ -50,13 +51,11 @@ local function draft()
 		return
 	end
 
-	-- Render notes for just this release: `--latest` restricts git-cliff to the
-	-- newest tag and `--strip header` drops the changelog preamble.
-	local notes = process.run({ config.gitCliffCmd, "--config", "cliff.toml", "--latest", "--strip", "header" })
-	assert(notes.ok, notes.stderr)
-
+	-- Same renderer the publish PR uses for its preview, so the drafted notes and
+	-- the previewed notes can't drift. By now the tag exists, so it renders the
+	-- newest tagged release.
 	local notesPath = path.join(getTempDir(), "release-notes.md")
-	fs.writeStringToFile(notesPath, notes.stdout:gsub("%s+$", ""))
+	fs.writeStringToFile(notesPath, renderReleaseNotes(tag))
 
 	run(config.ghCmd, {
 		"release",

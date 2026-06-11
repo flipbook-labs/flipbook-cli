@@ -1,13 +1,17 @@
 name: Release
 
-# The release lifecycle lives in the `flipbook-cli release` subcommands (gate,
-# publish, attach, prepare-pr). This workflow builds the binary once and then
-# runs those subcommands against the built artifact, exercising the real binary
-# the way a user would rather than running the source through Lute.
-
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [
+        opened,
+        synchronize,
+        reopened,
+        # We include `labeled` so that tagging the PR with `debug:release-pr`
+        # will trigger a debug version of the release workflow.
+        labeled,
+      ]
   workflow_dispatch:
     inputs:
       force_publish:
@@ -18,6 +22,7 @@ on:
 jobs:
   build:
     name: build (${{ matrix.os }})
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'debug:release-pr')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     # The Windows build currently fails on a Lute-adjacent issue we still
@@ -99,7 +104,7 @@ jobs:
 
   publish-release:
     needs: [build, gate]
-    if: needs.gate.outputs.should_publish == 'true'
+    if: github.event_name != 'pull_request' && needs.gate.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -127,13 +132,12 @@ jobs:
 
   attach:
     needs: [build, gate, publish-release]
-    if: needs.gate.outputs.should_publish == 'true'
+    if: github.event_name != 'pull_request' && needs.gate.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
-      # Checkout so `gh` can infer the repository from the origin remote.
       - uses: actions/checkout@v6
 
       - name: Download flipbook-cli
@@ -155,14 +159,53 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  publish:
+    needs: [build, gate, attach]
+    if: github.event_name != 'pull_request' && needs.gate.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download flipbook-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: flipbook-cli
+
+      - name: Publish release
+        run: |
+          chmod +x flipbook-cli
+          ./flipbook-cli release publish --tag "v${{ needs.gate.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   prepare-release-pr:
     needs: [build, gate, publish-release]
+    # As I looked upon this horrible condition I had a vision: why don't I just
+    # do all this in a GitHub App?? We already have flipbook-backend set up so
+    # we can leverage that to run this workflow with a much saner
+    # condition and without worrying about GITHUB_TOKEN limitations.
+    #
+    # The next problem is that I've spent so much time on this release cycle
+    # that I've been neglecting Storybook Embedding work so I'm just gonna park
+    # it and hope that one day I remember how good of an idea this is
     if: |
       always() &&
       needs.gate.result == 'success' &&
       (
-        (needs.gate.outputs.has_changes == 'true' && needs.gate.outputs.should_publish != 'true') ||
-        (needs.gate.outputs.should_publish == 'true' && needs.publish-release.result == 'success')
+        (
+          github.event_name != 'pull_request' &&
+          (
+            (needs.gate.outputs.has_changes == 'true' && needs.gate.outputs.should_publish != 'true') ||
+            (needs.gate.outputs.should_publish == 'true' && needs.publish-release.result == 'success')
+          )
+        ) ||
+        (
+          github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'debug:release-pr')
+        )
       )
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -177,21 +220,22 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ secrets.FLIPBOOK_BACKEND_APP_ID }}
+          client-id: ${{ secrets.FLIPBOOK_BACKEND_APP_ID }}
           private-key: ${{ secrets.FLIPBOOK_BACKEND_APP_PRIVATE_KEY }}
 
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          # This makes sure even on PR-triggered runs that the changelog gets
+          # generated the expected way (by building it off `main`).
+          ref: main
 
-      # `release prepare-pr` shells out to git-cliff to regenerate the changelog,
-      # which Rokit provides.
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
           version: v1.2.0
 
-      - name: Download flipbook-cli
+      - name: Download our build of flipbook-cli
         uses: actions/download-artifact@v8
         with:
           name: flipbook-cli
@@ -203,7 +247,19 @@ jobs:
           chmod +x flipbook-cli
           result="$(./flipbook-cli release prepare-pr)"
           echo "$result"
-          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$result" >> "$GITHUB_OUTPUT"
+          # `release prepare-pr` shells out to git-cliff, whose command echo lands
+          # on stdout ahead of the JSON result; keep only the final JSON line.
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' <<< "$(tail -n1 <<< "$result")" >> "$GITHUB_OUTPUT"
+
+      - name: Render preview of release notes
+        id: notes
+        run: |
+          set -euo pipefail
+          {
+            echo 'body<<__RELEASE_NOTES_EOF__'
+            ./flipbook-cli release notes --version "${{ steps.prepare.outputs.version }}"
+            echo '__RELEASE_NOTES_EOF__'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create or update publish PR
         uses: peter-evans/create-pull-request@v7
@@ -211,12 +267,14 @@ jobs:
           # Push as the GitHub App rather than the default GITHUB_TOKEN so the
           # branch push triggers CI on the publish PR. Pushes made with
           # GITHUB_TOKEN do not trigger further workflow runs.
-          # Read more: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow
+          #
+          # [Read more](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow)
           token: ${{ steps.app-token.outputs.token }}
-          base: ${{ github.ref_name }}
-          branch: publish-next-version
+          base: main
+          branch: ${{ github.event_name == 'pull_request' && 'debug-publish-next-version' || 'publish-next-version' }}
+          draft: true
           commit-message: Publish v${{ steps.prepare.outputs.version }}
-          title: "[AUTO-GENERATED] Publish v${{ steps.prepare.outputs.version }}"
+          title: ${{ github.event_name == 'pull_request' && '[DEBUG]' || '' }} Publish v${{ steps.prepare.outputs.version }}
           add-paths: |
             CHANGELOG.md
             loom.config.luau
@@ -229,7 +287,18 @@ jobs:
             > 1. Create and push tag `v${{ steps.prepare.outputs.version }}`
             > 2. Create a draft GitHub release for that tag
             > 3. Trigger binary builds for macOS, Linux, and Windows
-            > 4. Attach release assets to the draft release
+            > 4. Attach the build artifacts to the release
+            > 5. Publish the release once the artifacts are attached
+
+            <details>
+            <summary><b>GitHub Release preview</b></summary>
+
+            # v${{ steps.prepare.outputs.version }}
+
+            **github-actions** released this 0 seconds ago 🔒 Immutable 🏷️ v${{ steps.prepare.outputs.version }} 🔗 SHA
+
+            ${{ steps.notes.outputs.body }}
+            </details>
 
             Next release will be available here:
             ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.prepare.outputs.version }}
