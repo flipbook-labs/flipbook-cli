@@ -188,6 +188,14 @@ jobs:
 
   prepare-release-pr:
     needs: [build, gate, publish-release]
+    # As I looked upon this horrible condition I had a vision: why don't I just
+    # do all this in a GitHub App?? We already have flipbook-backend set up so
+    # we can leverage that to run this workflow with a much saner
+    # condition and without worrying about GITHUB_TOKEN limitations.
+    #
+    # The next problem is that I've spent so much time on this release cycle
+    # that I've been neglecting Storybook Embedding work so I'm just gonna park
+    # it and hope that one day I remember how good of an idea this is
     if: |
       always() &&
       needs.gate.result == 'success' &&
