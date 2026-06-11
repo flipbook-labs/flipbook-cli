@@ -227,10 +227,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
-          # On a debug PR run, check out the PR's own branch so the regeneration
-          # runs against this PR's content (the debug PR then previews the publish
-          # PR as it would look once this PR merges).
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
 
       - uses: CompeyDev/setup-rokit@v0.2.1
         with:
@@ -292,9 +288,7 @@ jobs:
             > 5. Publish the release once the artifacts are attached
 
             <details>
-            <summary>GitHub Release preview</summary>
-
-            Once merged and published, the GitHub release will look like this:
+            <summary><b>GitHub Release preview</b></summary>
 
             # v${{ steps.prepare.outputs.version }}
 
