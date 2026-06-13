@@ -72,28 +72,16 @@ flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 1
 | `--github-token`      | GitHub token. Falls back to the `GITHUB_TOKEN` env var.            |
 | `--github-repository` | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.       |
 
-### `release`
+## Releasing
 
-Manage the project's own release lifecycle. The version in `loom.config.luau` is
-the source of truth; these subcommands tag it, draft the GitHub release, attach
-build artifacts, and prepare the next version-bump PR. The release workflow
-([`.github/workflows/release.yml`](.github/workflows/release.yml)) is a thin
-wrapper that runs these against [git-cliff](https://github.com/orhun/git-cliff)
-and [`gh`](https://cli.github.com/) (authenticated via `GH_TOKEN`/`GITHUB_TOKEN`).
-
-| Subcommand   | Description                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------ |
-| `gate`       | Decide whether to publish the current version or prepare the next one. Prints the decision as JSON (`version`, `should_publish`, `has_changes`) for the caller to parse. Pass `--force-publish` to publish regardless of repo state. |
-| `draft`      | Tag the current version's commit, push the tag, and open a draft GitHub release with git-cliff-generated notes. |
-| `attach`     | Upload build artifacts to the draft release for a tag (skips non-draft releases).                |
-| `prepare-pr` | Bump the version and regenerate `CHANGELOG.md`, leaving both modified in the working tree. Prints the next version as JSON (`version`); the caller stages, commits, and opens the publish PR. |
-
-```sh
-flipbook-cli release gate
-flipbook-cli release draft --version 1.2.0
-flipbook-cli release attach --tag v1.2.0 --files flipbook-cli-linux-x86_64.zip
-flipbook-cli release prepare-pr --bump minor
-```
+Releases are handled by [changewrite](https://github.com/flipbook-labs/changewrite),
+which bundles the full release lifecycle (gate, draft, attach, publish, and the
+version-bump PR) into a single GitHub Action. The release workflow
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) builds the
+cross-platform binaries, then hands the version source ([`changewrite.toml`](changewrite.toml),
+mirrored to `loom.config.luau`) and changelog config ([`cliff.toml`](cliff.toml))
+to the action, which attaches the binaries to the draft release via a
+`post-draft-hook`.
 
 ## Environment variables
 
@@ -103,4 +91,4 @@ flipbook-cli release prepare-pr --bump minor
 | `GITHUB_TOKEN`      | GitHub API auth for the Flipbook release fetch and `comment`         |
 | `GITHUB_REPOSITORY` | `owner/repo`; fallback for `--github-repository` on `comment`        |
 
-The release commands also honor command-path overrides: `FLIPBOOK_ROJO_CMD`, `FLIPBOOK_GIT_CMD`, `FLIPBOOK_GH_CMD`, and `FLIPBOOK_GIT_CLIFF_CMD` (default to `rojo`, `git`, `gh`, and `git-cliff`).
+The `deploy` command also honors the `FLIPBOOK_ROJO_CMD` override for the `rojo` executable path (defaults to `rojo`).

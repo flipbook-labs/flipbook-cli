@@ -4,7 +4,6 @@ local types = require("@self/types")
 local commentCommand = require("@self/commands/comment")
 local deployCommand = require("@self/commands/deploy")
 local helpCommand = require("@self/commands/help")
-local releaseCommand = require("@self/commands/release")
 
 local function findSubcommand(args: { string }): string?
 	local i = 2
@@ -24,7 +23,6 @@ end
 local availableCommands: { [string]: types.Command } = {
 	deploy = deployCommand,
 	comment = commentCommand,
-	release = releaseCommand,
 	help = helpCommand,
 }
 
