@@ -4,8 +4,8 @@
 # New tools can be added by running `rokit add <tool>` in a terminal.
 
 [tools]
-lute = "luau-lang/lute@1.0.1-nightly.20260612"
+lute = "luau-lang/lute@1.0.1-nightly.20260701"
 rojo = "rojo-rbx/rojo@7.6.1"
-luau-lsp = "JohnnyMorganz/luau-lsp@1.68.0"
+luau-lsp = "JohnnyMorganz/luau-lsp@1.68.1"
 stylua = "JohnnyMorganz/stylua@2.5.2"
 changewrite = "flipbook-labs/changewrite@0.5.0"
