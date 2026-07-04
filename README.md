@@ -79,8 +79,7 @@ which bundles the full release lifecycle (gate, draft, attach, publish, and the
 version-bump PR) into a single GitHub Action. The release workflow
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)) builds the
 cross-platform binaries, then hands the version source ([`changewrite.toml`](changewrite.toml),
-mirrored to `loom.config.luau`) and changelog config ([`cliff.toml`](cliff.toml))
-to the action, which attaches the binaries to the draft release via a
+mirrored to `loom.config.luau`) to the action, which attaches the binaries to the draft release via a
 `post-draft-hook`.
 
 ## Environment variables
