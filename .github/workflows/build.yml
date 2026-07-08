@@ -36,7 +36,7 @@ jobs:
             binary: build/flipbook-cli.exe
             zip_name: flipbook-cli-windows-x86_64.zip
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: CompeyDev/setup-rokit@1d9390883f7ebce19d48f5b8d006e11d387c92ab # v0.2.1
         with:
