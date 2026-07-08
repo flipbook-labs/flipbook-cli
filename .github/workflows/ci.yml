@@ -22,10 +22,6 @@ jobs:
           require-entry: 'true'
 
   build:
-    # Build every supported platform. This overlaps with the release
-    # workflow's matrix build on pushes to `main`, but that duplication is
-    # intentional, the same way the changewrite checks run in both CI and the
-    # release workflow.
     uses: ./.github/workflows/build.yml
 
   test:
