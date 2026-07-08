@@ -13,9 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # changewrite v0.6.0's `require-entry` check compares the branch
-          # against its base, so it needs full history rather than a shallow
-          # clone.
+          # changewrite's `require-entry` check compares the branch against
+          # its base, so it needs full history rather than a shallow clone.
           fetch-depth: 0
 
       - uses: flipbook-labs/changewrite@v0.6.0
