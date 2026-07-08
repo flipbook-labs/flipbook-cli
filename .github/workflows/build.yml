@@ -48,6 +48,11 @@ jobs:
         run: |
           "${{ matrix.binary || 'build/flipbook-cli' }}" --help
 
+      # The Windows runner's Git Bash has no `zip`, so install it before packaging.
+      - name: Install zip
+        if: inputs.upload-artifacts && matrix.os == 'windows'
+        run: choco install zip --yes --no-progress
+
       - name: Package binary
         if: inputs.upload-artifacts
         shell: bash
