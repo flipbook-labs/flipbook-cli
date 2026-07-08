@@ -12,8 +12,12 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v7
+        with:
+          # changewrite's `require-entry` check compares the branch against
+          # its base, so it needs full history rather than a shallow clone.
+          fetch-depth: 0
 
-      - uses: flipbook-labs/changewrite@v0.5.0
+      - uses: flipbook-labs/changewrite@v0.6.0
         with:
           require-entry: 'true'
 
