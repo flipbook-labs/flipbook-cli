@@ -16,11 +16,6 @@ jobs:
     name: build (${{ matrix.os }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 5
-    # The Windows build currently fails on a Lute-adjacent issue we still
-    # need to work out. Tolerate it for now so it reports without blocking
-    # PRs or releases. Once it's reliably green, drop this line to make it
-    # a required check.
-    continue-on-error: ${{ matrix.os == 'windows' }}
     strategy:
       fail-fast: false
       matrix:
