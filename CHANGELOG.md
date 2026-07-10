@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.7.0
+
+### Changes
+
+- Upgrade the runtime dependencies: FlipbookBatteries `v0.9.0` → `v0.12.0` and Lute `v1.0.1-nightly.20260521` → `v1.0.1-nightly.20260701`.
+
+- Releases are now handled by the [changewrite](https://github.com/flipbook-labs/changewrite) action, which bundles the whole release lifecycle (gate, draft, attach, publish, and the version-bump PR) into a single workflow step, replacing the bespoke `release` command and its multi-job workflow.
+
+### Dependencies
+
+- Consume the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library `v0.3.0` as a Loom dev dependency, and add `AGENTS.md`/`CLAUDE.md` guidance routing agents to it. The library installs into `~/.loom/store` for agents to read but is not bundled into the binary.
+
+- Upgrade AgentSkills `v0.3.0` → `v0.4.0`.
+
+- Upgrade the changewrite action and CLI `v0.5.0` → `v0.6.0`. The CI changelog check now fetches full git history so `require-entry` can compare the branch against its base.
+
+### Fixes
+
+- Package the Windows binary in releases by installing `zip` on the Windows runner.
+
+### Internal
+
+- Build the macOS, Linux, and Windows binaries on every pull request.
+
+- Upgrade the Changewrite release action to `v0.7.0` and adopt its `publish-lock` check.
+
+
 ## v0.6.0
 
 ### Changes
@@ -112,4 +139,3 @@ All notable changes to this project will be documented in this file.
 - Add CI workflow and refactor deployment commands for flipbook-cli ([5b3b5ac](https://github.com/flipbook-labs/flipbook-cli/commit/5b3b5ac63fe9f8dcb71f09815acb48aabebb35eb))
 
 - Initial commit ([940f691](https://github.com/flipbook-labs/flipbook-cli/commit/940f69186520dafb5a3ab4819cfa7b094a8ef38b))
-
