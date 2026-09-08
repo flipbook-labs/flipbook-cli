@@ -60,7 +60,7 @@ Each deploy:
 Post or update the storybook preview comment on a pull request. Resolves the place by name (same as deploy) to build the preview link.
 
 ```sh
-flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123"
+flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123" --launch-data '{"search":"Button|Dialog"}'
 ```
 
 | Flag                  | Description                                                          |
@@ -68,6 +68,7 @@ flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 1
 | `--pr`                | **Required.** Pull request number to comment on.                    |
 | `--universe-id`       | **Required.** Universe the preview place lives in.                  |
 | `--place-name`        | **Required.** Name of the deployed preview place.                  |
+| `--launch-data`       | JSON object to include as launch data in the preview link.         |
 | `--api-key`           | Roblox API key. Falls back to the `ROBLOX_API_KEY` env var.        |
 | `--github-token`      | GitHub token. Falls back to the `GITHUB_TOKEN` env var.            |
 | `--github-repository` | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.       |
