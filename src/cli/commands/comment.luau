@@ -3,8 +3,9 @@ local json = require("@std/json")
 local process = require("@std/process")
 
 local getPlaceIdByNameAsync = require("@root/requests/getPlaceIdByNameAsync")
+local getUniverseThumbnailUrlAsync = require("@root/requests/getUniverseThumbnailUrlAsync")
 local githubRequest = require("@root/requests/githubRequest")
-local storybookPreviewUrl = require("@root/storybookPreviewUrl")
+local storybookPreviewComment = require("@root/storybookPreviewComment")
 local types = require("@root/cli/types")
 
 local PR_COMMENT_MARKER = "<!-- flipbook-pr-preview -->"
@@ -29,6 +30,9 @@ parser:add("place-name", "option", {
 parser:add("launch-data", "option", {
 	help = "JSON object to include as launch data in the preview link.",
 })
+parser:add("current-place-name", "option", {
+	help = "Optional preview place containing Flipbook built from the pull request.",
+})
 parser:add("api-key", "option", {
 	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
 })
@@ -42,18 +46,12 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
-local COMMENT_TEMPLATE = [[
-## Storybook Preview
-
-* View: {{viewUrl}}
-* Launch: {{launchUrl}}
-]]
-
 local function run()
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
 	local placeName = parser:get("place-name") :: string
 	local launchData = parser:get("launch-data")
+	local currentPlaceName = parser:get("current-place-name")
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
@@ -72,9 +70,24 @@ local function run()
 		`Could not find a place named "{placeName}" in universe {universeId}`
 	)
 
-	local template = COMMENT_TEMPLATE:gsub("{{viewUrl}}", `https://www.roblox.com/games/{targetPlaceId}`)
-		:gsub("{{launchUrl}}", storybookPreviewUrl(targetPlaceId, launchData))
-	local body = `{PR_COMMENT_MARKER}\n{template}`
+	local previews = {
+		{
+			placeId = targetPlaceId,
+			launchData = launchData,
+		},
+	}
+	if currentPlaceName then
+		local currentPlaceId = assert(
+			getPlaceIdByNameAsync(universeId, currentPlaceName, apiKey),
+			`Could not find a place named "{currentPlaceName}" in universe {universeId}`
+		)
+		table.insert(previews, {
+			placeId = currentPlaceId,
+			launchData = launchData,
+		})
+	end
+
+	local body = `{PR_COMMENT_MARKER}\n{storybookPreviewComment(getUniverseThumbnailUrlAsync(universeId), previews)}`
 
 	local existingId: number? = nil
 	local page = 1
