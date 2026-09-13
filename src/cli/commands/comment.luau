@@ -26,6 +26,9 @@ parser:add("place-name", "option", {
 	help = "Name of the deployed preview place. Resolved to a place ID to build the link.",
 	required = true,
 })
+parser:add("launch-data", "option", {
+	help = "JSON object to include as launch data in the preview link.",
+})
 parser:add("api-key", "option", {
 	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
 })
@@ -50,6 +53,7 @@ local function run()
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
 	local placeName = parser:get("place-name") :: string
+	local launchData = parser:get("launch-data")
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
@@ -69,7 +73,7 @@ local function run()
 	)
 
 	local template = COMMENT_TEMPLATE:gsub("{{viewUrl}}", `https://www.roblox.com/games/{targetPlaceId}`)
-		:gsub("{{launchUrl}}", storybookPreviewUrl(targetPlaceId))
+		:gsub("{{launchUrl}}", storybookPreviewUrl(targetPlaceId, launchData))
 	local body = `{PR_COMMENT_MARKER}\n{template}`
 
 	local existingId: number? = nil
