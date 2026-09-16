@@ -1,7 +1,12 @@
 local json = require("@std/json")
 
 local function getUniverseThumbnail(responseBody: string): string?
-	local body = json.asObject(json.deserialize(responseBody))
+	local parseOk, parsed = pcall(json.deserialize, responseBody)
+	if not parseOk then
+		return nil
+	end
+
+	local body = json.asObject(parsed)
 	local games = if body then json.asArray(body.data) else nil
 	local game = if games and games[1] then json.asObject(games[1]) else nil
 	local thumbnails = if game then json.asArray(game.thumbnails) else nil

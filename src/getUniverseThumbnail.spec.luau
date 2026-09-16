@@ -24,4 +24,8 @@ test.suite("getUniverseThumbnail", function(suite)
 
 		assert.eq(thumbnailUrl, nil)
 	end)
+
+	suite:case("omits a malformed thumbnail response", function(assert)
+		assert.eq(getUniverseThumbnail("not json"), nil)
+	end)
 end)
