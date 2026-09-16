@@ -3,4 +3,4 @@ bump: minor
 category: Features
 ---
 
-Add experience thumbnails, descriptive links, and side-by-side runtime comparisons to Storybook preview comments.
+Customize Storybook preview comments with experience thumbnails and URL template placeholders.

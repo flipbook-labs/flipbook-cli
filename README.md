@@ -57,23 +57,39 @@ Each deploy:
 
 ### `comment`
 
-Post or update the storybook preview comment on a pull request. Resolves each place by name to build the preview links and includes the experience thumbnail when Roblox has one ready.
+Post or update the Storybook preview comment on a pull request. The command resolves the place by name, builds its preview links, and includes the experience thumbnail when Roblox has one ready.
 
 ```sh
 flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123" --launch-data '{"search":"Button|Dialog"}'
-flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123" --current-place-name "Flipbook Stories 123 Current Flipbook"
 ```
 
-| Flag                   | Description                                                                        |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| `--pr`                 | **Required.** Pull request number to comment on.                                    |
-| `--universe-id`        | **Required.** Universe the preview place lives in.                                  |
-| `--place-name`         | **Required.** Name of the deployed preview place.                                   |
-| `--current-place-name` | Optional preview place containing Flipbook built from the pull request.             |
-| `--launch-data`        | JSON object to include as launch data in each preview link.                         |
-| `--api-key`            | Roblox API key. Falls back to the `ROBLOX_API_KEY` env var.                         |
-| `--github-token`       | GitHub token. Falls back to the `GITHUB_TOKEN` env var.                             |
-| `--github-repository`  | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.                        |
+| Flag                  | Description                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| `--pr`                | **Required.** Pull request number to comment on.                    |
+| `--universe-id`       | **Required.** Universe the preview place lives in.                  |
+| `--place-name`        | **Required.** Name of the deployed preview place.                   |
+| `--launch-data`       | JSON object to include as launch data in the preview link.         |
+| `--comment-template`  | Markdown template for the preview comment.                         |
+| `--api-key`           | Roblox API key. Falls back to the `ROBLOX_API_KEY` env var.         |
+| `--github-token`      | GitHub token. Falls back to the `GITHUB_TOKEN` env var.             |
+| `--github-repository` | `owner/repo`. Falls back to the `GITHUB_REPOSITORY` env var.        |
+
+Use `--comment-template` when the repository needs custom preview copy or layout. The template supports these placeholders:
+
+| Placeholder             | Value                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `{{experienceUrl}}`     | Roblox experience page for the deployed place.                                        |
+| `{{launchUrl}}`         | Direct join URL, including `--launch-data` when supplied.                             |
+| `{{thumbnailUrl}}`      | Experience thumbnail URL, or an empty string when the thumbnail is unavailable.       |
+| `{{thumbnailMarkdown}}` | Linked experience thumbnail Markdown, or an empty string when the thumbnail is unavailable. |
+
+```sh
+flipbook-cli comment --pr 123 --universe-id 123 --place-name "Flipbook Stories 123" --comment-template '## Component preview
+
+{{thumbnailMarkdown}}
+
+[Open the preview]({{launchUrl}})'
+```
 
 ## Development
 

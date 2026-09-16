@@ -14,6 +14,6 @@ test.suite("comment", function(suite)
 		})
 
 		assert.strContains(output, "--launch-data <launch-data>")
-		assert.strContains(output, "--current-place-name <current-place-name>")
+		assert.strContains(output, "--comment-template <comment-template>")
 	end)
 end)
