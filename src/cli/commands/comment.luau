@@ -3,7 +3,7 @@ local json = require("@std/json")
 local process = require("@std/process")
 
 local getPlaceIdByNameAsync = require("@root/requests/getPlaceIdByNameAsync")
-local getUniverseThumbnailUrlAsync = require("@root/requests/getUniverseThumbnailUrlAsync")
+local getUniverseThumbnailAsync = require("@root/requests/getUniverseThumbnailAsync")
 local githubRequest = require("@root/requests/githubRequest")
 local storybookPreviewComment = require("@root/storybookPreviewComment")
 local types = require("@root/cli/types")
@@ -87,7 +87,7 @@ local function run()
 		})
 	end
 
-	local body = `{PR_COMMENT_MARKER}\n{storybookPreviewComment(getUniverseThumbnailUrlAsync(universeId), previews)}`
+	local body = `{PR_COMMENT_MARKER}\n{storybookPreviewComment(getUniverseThumbnailAsync(universeId), previews)}`
 
 	local existingId: number? = nil
 	local page = 1

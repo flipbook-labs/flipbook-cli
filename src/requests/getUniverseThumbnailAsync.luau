@@ -1,8 +1,8 @@
 local net = require("@std/net")
 
-local getUniverseThumbnailUrl = require("@root/getUniverseThumbnailUrl")
+local getUniverseThumbnail = require("@root/getUniverseThumbnail")
 
-local function getUniverseThumbnailUrlAsync(universeId: number): string?
+local function getUniverseThumbnailAsync(universeId: number): string?
 	local response = net.request(
 		`https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds={universeId}&countPerUniverse=1&defaults=true&size=768x432&format=Png&isCircular=false`
 	)
@@ -10,7 +10,7 @@ local function getUniverseThumbnailUrlAsync(universeId: number): string?
 		return nil
 	end
 
-	return getUniverseThumbnailUrl(response.body)
+	return getUniverseThumbnail(response.body)
 end
 
-return getUniverseThumbnailUrlAsync
+return getUniverseThumbnailAsync

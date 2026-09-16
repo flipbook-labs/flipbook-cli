@@ -1,10 +1,10 @@
 local test = require("@std/test")
 
-local getUniverseThumbnailUrl = require("@root/getUniverseThumbnailUrl")
+local getUniverseThumbnail = require("@root/getUniverseThumbnail")
 
-test.suite("getUniverseThumbnailUrl", function(suite)
+test.suite("getUniverseThumbnail", function(suite)
 	suite:case("returns a completed experience thumbnail", function(assert)
-		local thumbnailUrl = getUniverseThumbnailUrl(
+		local thumbnailUrl = getUniverseThumbnail(
 			'{"data":[{"thumbnails":[{"state":"Completed","imageUrl":"https://images.example/preview.png"}]}]}'
 		)
 
@@ -12,7 +12,7 @@ test.suite("getUniverseThumbnailUrl", function(suite)
 	end)
 
 	suite:case("waits for a pending experience thumbnail", function(assert)
-		local thumbnailUrl = getUniverseThumbnailUrl(
+		local thumbnailUrl = getUniverseThumbnail(
 			'{"data":[{"thumbnails":[{"state":"Pending","imageUrl":"https://images.example/preview.png"}]}]}'
 		)
 
@@ -20,7 +20,7 @@ test.suite("getUniverseThumbnailUrl", function(suite)
 	end)
 
 	suite:case("omits a missing experience thumbnail", function(assert)
-		local thumbnailUrl = getUniverseThumbnailUrl('{"data":[{"thumbnails":[]}]}')
+		local thumbnailUrl = getUniverseThumbnail('{"data":[{"thumbnails":[]}]}')
 
 		assert.eq(thumbnailUrl, nil)
 	end)

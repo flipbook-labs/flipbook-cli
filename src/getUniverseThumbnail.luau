@@ -1,6 +1,6 @@
 local json = require("@std/json")
 
-local function getUniverseThumbnailUrl(responseBody: string): string?
+local function getUniverseThumbnail(responseBody: string): string?
 	local body = json.asObject(json.deserialize(responseBody))
 	local games = if body then json.asArray(body.data) else nil
 	local game = if games and games[1] then json.asObject(games[1]) else nil
@@ -14,4 +14,4 @@ local function getUniverseThumbnailUrl(responseBody: string): string?
 	return nil
 end
 
-return getUniverseThumbnailUrl
+return getUniverseThumbnail
