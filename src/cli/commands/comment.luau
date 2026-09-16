@@ -73,7 +73,9 @@ local function run()
 	)
 
 	local template = COMMENT_TEMPLATE:gsub("{{viewUrl}}", `https://www.roblox.com/games/{targetPlaceId}`)
-		:gsub("{{launchUrl}}", storybookPreviewUrl(targetPlaceId, launchData))
+		:gsub("{{launchUrl}}", function()
+			return storybookPreviewUrl(targetPlaceId, launchData)
+		end)
 	local body = `{PR_COMMENT_MARKER}\n{template}`
 
 	local existingId: number? = nil
