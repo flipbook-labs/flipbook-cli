@@ -1,10 +1,9 @@
 local cli = require("@batteries/cli")
 
 export type Command = {
-	run: (args: { string }) -> (),
-	title: string,
 	summary: string,
-	parser: cli.Parser?,
+	configure: (cli.Parser) -> (),
+	run: (cli.Parser) -> (),
 }
 
 return nil
