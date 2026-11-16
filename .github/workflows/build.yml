@@ -37,6 +37,19 @@ jobs:
         with:
           version: v1.2.0
 
+      # `lute compile` stores each bundled file under the deepest folder that
+      # all of them share, and it resolves `~/` aliases in the bundle from that
+      # folder. So the bundle only finds the Loom store when that folder is the
+      # home folder, as it is on macOS and Linux. The Windows runner checks out
+      # to D: and keeps the home folder on C:, so Lute gets a home folder that
+      # contains the checkout instead.
+      - name: Move Lute's home folder above the checkout
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $homeDir = Split-Path (Split-Path $env:GITHUB_WORKSPACE)
+          "USERPROFILE=$homeDir" >> $env:GITHUB_ENV
+
       - name: Install dependencies
         run: lute run install
 
