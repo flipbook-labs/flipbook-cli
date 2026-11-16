@@ -9,38 +9,37 @@ local types = require("@root/cli/types")
 
 local PR_COMMENT_MARKER = "<!-- flipbook-pr-preview -->"
 
-local title = "comment"
 local summary = "Post or update the storybook preview comment on a pull request."
 
-local parser = cli.parser()
-
-parser:add("pr", "option", {
-	help = "Pull request number to comment on.",
-	required = true,
-})
-parser:add("universe-id", "option", {
-	help = "Universe the preview place lives in.",
-	required = true,
-})
-parser:add("place-name", "option", {
-	help = "Name of the deployed preview place. Resolved to a place ID to build the link.",
-	required = true,
-})
-parser:add("launch-data", "option", {
-	help = "JSON object to include as launch data in the preview link.",
-})
-parser:add("api-key", "option", {
-	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
-})
-parser:add("github-token", "option", {
-	help = "GitHub token (Can also be supplied by the GITHUB_TOKEN env var)",
-})
-parser:add("github-repository", "option", {
-	help = "owner/repo (Can also be supplied by the GITHUB_REPOSITORY env var)",
-})
-parser:add("help", "flag", {
-	help = "Show this help message",
-})
+local function configure(parser: cli.Parser)
+	parser:add("pr", "option", {
+		help = "Pull request number to comment on.",
+		required = true,
+	})
+	parser:add("universe-id", "option", {
+		help = "Universe the preview place lives in.",
+		required = true,
+	})
+	parser:add("place-name", "option", {
+		help = "Name of the deployed preview place. Resolved to a place ID to build the link.",
+		required = true,
+	})
+	parser:add("launch-data", "option", {
+		help = "JSON object to include as launch data in the preview link.",
+	})
+	parser:add("api-key", "option", {
+		help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
+	})
+	parser:add("github-token", "option", {
+		help = "GitHub token (Can also be supplied by the GITHUB_TOKEN env var)",
+	})
+	parser:add("github-repository", "option", {
+		help = "owner/repo (Can also be supplied by the GITHUB_REPOSITORY env var)",
+	})
+	parser:add("help", "flag", {
+		help = "Show this help message",
+	})
+end
 
 local COMMENT_TEMPLATE = [[
 ## Storybook Preview
@@ -49,7 +48,7 @@ local COMMENT_TEMPLATE = [[
 * Launch: {{launchUrl}}
 ]]
 
-local function run()
+local function run(parser: cli.Parser)
 	local prNumber = assert(tonumber(parser:get("pr")), "--pr must be a number")
 	local universeId = assert(tonumber(parser:get("universe-id")), "--universe-id must be a number")
 	local placeName = parser:get("place-name") :: string
@@ -119,10 +118,9 @@ local function run()
 end
 
 local command: types.Command = {
-	run = run,
-	title = title,
 	summary = summary,
-	parser = parser,
+	configure = configure,
+	run = run,
 }
 
 return command

@@ -10,37 +10,36 @@ local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
-local title = "deploy"
 local summary = "Deploy a place file containing your storybooks to an experience with an embedded version of Flipbook."
 
-local parser = cli.parser()
+local function configure(parser: cli.Parser)
+	parser:add("place-name", "option", {
+		help = "Name of the place to update or create for this deployment.",
+		required = true,
+	})
+	parser:add("api-key", "option", {
+		help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
+	})
+	parser:add("universe-id", "option", {
+		help = "Universe to deploy to.",
+		required = true,
+	})
+	parser:add("place-file", "option", {
+		help = "Path to an rbxl place file containing your storybooks and stories.",
+		required = true,
+	})
+	parser:add("place-id", "option", {
+		help = "Place ID to publish to. If omitted, the place is exclusively resolved or created by --place-name. This is useful if you need to disambiguate same-named places",
+	})
+	parser:add("flipbook-rbxm", "option", {
+		help = "Optional path to the Flipbook rbxm to use as the runtime. By default, the latest version from GitHub is used.",
+	})
+	parser:add("help", "flag", {
+		help = "Show this help message",
+	})
+end
 
-parser:add("place-name", "option", {
-	help = "Name of the place to update or create for this deployment.",
-	required = true,
-})
-parser:add("api-key", "option", {
-	help = "Roblox API key (Can also be supplied by the ROBLOX_API_KEY env var)",
-})
-parser:add("universe-id", "option", {
-	help = "Universe to deploy to.",
-	required = true,
-})
-parser:add("place-file", "option", {
-	help = "Path to an rbxl place file containing your storybooks and stories.",
-	required = true,
-})
-parser:add("place-id", "option", {
-	help = "Place ID to publish to. If omitted, the place is exclusively resolved or created by --place-name. This is useful if you need to disambiguate same-named places",
-})
-parser:add("flipbook-rbxm", "option", {
-	help = "Optional path to the Flipbook rbxm to use as the runtime. By default, the latest version from GitHub is used.",
-})
-parser:add("help", "flag", {
-	help = "Show this help message",
-})
-
-local function run()
+local function run(parser: cli.Parser)
 	local apiKey = assert(
 		parser:get("api-key") or process.env.ROBLOX_API_KEY,
 		"An Open Cloud API key is required, use --api-key or the ROBLOX_API_KEY env var to supply it"
@@ -93,10 +92,9 @@ local function run()
 end
 
 local command: types.Command = {
-	run = run,
-	title = title,
 	summary = summary,
-	parser = parser,
+	configure = configure,
+	run = run,
 }
 
 return command
