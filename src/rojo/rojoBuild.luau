@@ -1,4 +1,4 @@
-local FlipbookBatteries = require("@FlipbookBatteries")
+local FlipbookBatteries = require("@flipbook-batteries")
 local path = require("@std/path")
 
 local config = require("@root/config")

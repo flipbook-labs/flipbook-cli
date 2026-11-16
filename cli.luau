@@ -1,4 +1,4 @@
-local FlipbookBatteries = require("@FlipbookBatteries")
+local FlipbookBatteries = require("@flipbook-batteries")
 local cli = require("@root/cli")
 
 FlipbookBatteries.dotenv()
