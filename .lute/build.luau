@@ -11,7 +11,8 @@ local STORE_PATH = path.join(process.homedir(), ".loom", "store")
 local CONFIG_FILES = { [".luaurc"] = true, [".config.luau"] = true }
 
 type Lockfile = {
-	packages: { [string]: { installPath: string } },
+	dependencies: { [string]: string },
+	packages: { [string]: { installPath: string, dependencies: { [string]: string } } },
 }
 
 -- Copies a folder with `fs` rather than `cp`, which Windows lacks.
@@ -56,16 +57,29 @@ local function stage()
 	fs.copy("cli.luau", path.join(STAGE_PATH, "cli.luau"))
 	copyInto("src", path.join(STAGE_PATH, "src"), "../store")
 
-	-- The lockfile writes `@pkg/` for the store. Dependencies from the same
-	-- repository, like Lute's batteries, share a store folder.
+	-- Only `dependencies` and what they depend on are staged, since dev
+	-- dependencies never reach the binary. The lockfile writes `@pkg/` for the
+	-- store, and the path of a dependency without a `target` ends in `/.`. A
+	-- dependency with a `target`, like Lute's `batteries`, stages only that
+	-- subfolder. Both keep staged paths short, since a whole repository or the
+	-- skills library holds paths deep enough to pass Windows' 260-character
+	-- limit.
 	local lockfile: Lockfile = luau.loadModule("pkg.lock.luau")
-	for _, package in lockfile.packages do
-		local folder = package.installPath:match("^@pkg/([^/]+)")
-		assert(folder, `Unexpected install path {package.installPath}`)
-		local dest = path.join(STAGED_STORE_PATH, folder)
-		if not fs.exists(dest) then
-			copyInto(path.join(STORE_PATH, folder), dest, "..")
+	local function stagePackage(key: string)
+		local package = lockfile.packages[key]
+		local relative = package.installPath:gsub("^@pkg/", ""):gsub("/%.$", "")
+		local dest = path.join(STAGED_STORE_PATH, relative)
+		if fs.exists(dest) then
+			return
 		end
+		local _, depth = relative:gsub("/", "")
+		copyInto(path.join(STORE_PATH, relative), dest, string.rep("../", depth) .. "..")
+		for _, dependency in package.dependencies do
+			stagePackage(dependency)
+		end
+	end
+	for _, key in lockfile.dependencies do
+		stagePackage(key)
 	end
 end
 
