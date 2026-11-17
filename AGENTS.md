@@ -12,7 +12,7 @@ Complete every step below before you write any code, tests, changelog entries, o
    rokit install && lute run install
    ```
 
-   `rokit install` puts `lute`, `luau-lsp`, `stylua`, and `selene` on PATH. `lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) into `~/.loom/store` and points the aliases in [`.config.luau`](.config.luau) at them. `lute compile` bundles them into the binary from there. The shared skills library is a dev dependency, so it lands in `~/.loom/store` for you to read but is not bundled into the binary. Without this step the skills are not on disk.
+   `rokit install` puts `lute`, `luau-lsp`, `stylua`, and `selene` on PATH. `lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) into `~/.loom/store` and points the aliases in [`.config.luau`](.config.luau) at them. `lute run build` copies them into `build/` and bundles them into the binary from there. The shared skills library is a dev dependency, so it lands in `~/.loom/store` for you to read but is not bundled into the binary. Without this step the skills are not on disk.
 
 2. Find the skills folder: it's the `agent-skills` alias in [`.config.luau`](.config.luau). Use that path wherever `<skills>` appears below.
 

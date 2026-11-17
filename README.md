@@ -85,7 +85,7 @@ lute run build     # compile the flipbook-cli binary into build/
 lute test          # run the *.spec.luau test suite
 ```
 
-`lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) into `~/.loom/store` and points the aliases in [`.config.luau`](.config.luau) at them, and `lute run build` bundles them into the compiled binary from there. It also fetches the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library that [`AGENTS.md`](AGENTS.md) routes agents to. That library is a dev dependency, so it installs into `~/.loom/store` but is not bundled into the binary.
+`lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) into `~/.loom/store` and points the aliases in [`.config.luau`](.config.luau) at them, and `lute run build` copies them into `build/` and bundles them into the compiled binary from there. It also fetches the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library that [`AGENTS.md`](AGENTS.md) routes agents to. That library is a dev dependency, so it installs into `~/.loom/store` but is not bundled into the binary.
 
 ## Releasing
 
