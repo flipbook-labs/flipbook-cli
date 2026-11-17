@@ -3,12 +3,12 @@ return {
 		name = "flipbook-cli",
 		version = "0.6.0",
 		dependencies = {
-			["flipbook-batteries"] = {
+			FlipbookBatteries = {
 				rev = "v0.13.0",
 				sourceKind = "github",
 				source = "https://github.com/flipbook-labs/flipbook-batteries",
 			},
-			Lute = {
+			Batteries = {
 				rev = "v1.0.1-nightly.20261115",
 				sourceKind = "github",
 				source = "https://github.com/luau-lang/lute",

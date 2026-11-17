@@ -12,19 +12,11 @@ Complete every step below before you write any code, tests, changelog entries, o
    rokit install && lute run install
    ```
 
-   `rokit install` puts `lute`, `luau-lsp`, `stylua`, and `selene` on PATH. `lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) into `~/.loom/store` and points the aliases in [`.config.luau`](.config.luau) at them. `lute compile` bundles them into the binary from there. The shared skills library is a dev dependency, so it lands in `~/.loom/store` for you to read but is not bundled into the binary. Without this step the skills are not on disk.
+   `rokit install` puts `lute`, `luau-lsp`, `stylua`, and `selene` on PATH. `lute run install` fetches the dependencies in [`pkg.luau`](pkg.luau) and copies them into `LuauPackages/`, where the aliases in [`.config.luau`](.config.luau) point. `lute compile` bundles them into the binary from there. The shared skills library is a dev dependency, so it lands in `LuauPackages/AgentSkills/` for you to read but is not bundled into the binary. Without this step the skills are not on disk.
 
-2. Resolve the concrete skills path from the pinned version (do not guess it):
+2. Read the routing index at `LuauPackages/AgentSkills/AGENTS.md` in full. Its **Project Skills** section lists every skill with a trigger-rich one-liner, so you know what exists before you start. This read is unconditional.
 
-   ```sh
-   echo ~/.loom/store/$(sed -n 's|.*installPath = "@pkg/\(agent-skills--[^"]*\)".*|\1|p' pkg.lock.luau)
-   ```
-
-   `pkg.lock.luau` records where the `AgentSkills` version pinned in [`pkg.luau`](pkg.luau) was installed, and the command prints that folder. Use it wherever `<skills>` appears below.
-
-3. Read the routing index at `<skills>/AGENTS.md` in full. Its **Project Skills** section lists every skill with a trigger-rich one-liner, so you know what exists before you start. This read is unconditional.
-
-Deep reads of individual `<skills>/src/<scope>/<name>/SKILL.md` files stay on demand: when a task matches a trigger from the index, read that skill before doing the work it covers. Reading the index up front is what lets those triggers fire.
+Deep reads of individual `LuauPackages/AgentSkills/src/<scope>/<name>/SKILL.md` files stay on demand: when a task matches a trigger from the index, read that skill before doing the work it covers. Reading the index up front is what lets those triggers fire.
 
 Reading a skill once does not mean you applied it when you wrote the code hours later. When you take a pass over a change and before you call a task done, follow the `org/review-pass` skill: it maps the diff to the skills that govern each file, has you re-open them at that point, runs the writing-style and code-comments critic passes over what you generated, and catches skill drift to feed back (see below).
 
