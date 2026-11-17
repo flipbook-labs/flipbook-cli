@@ -6,71 +6,67 @@ local project = require("@repo/project")
 local system = require("@lute/system")
 
 local STAGE_PATH = path.join(project.BUILD_PATH, "stage")
-local STORE_PREFIX = "~/.loom/store/"
+local STAGED_STORE_PATH = path.join(STAGE_PATH, "store")
+local STORE_PATH = path.join(process.homedir(), ".loom", "store")
+local CONFIG_FILES = { [".luaurc"] = true, [".config.luau"] = true }
 
--- Files from the checkout that `cli.luau` requires, copied into the staging
--- folder alongside the dependencies.
-local SOURCES = { "cli.luau", "src" }
+type Lockfile = {
+	packages: { [string]: { installPath: string } },
+}
 
-local function copyInto(src: path.Pathlike, dest: path.Pathlike)
-	if fs.type(src) ~= "dir" then
-		fs.copy(src, dest)
-		return
-	end
+-- Copies a folder with `fs` rather than `cp`, which Windows lacks.
+-- `storeFromHere` is the relative path from `dest` to the staged store, and
+-- each config file copied along the way has its aliases into `~/.loom/store`
+-- rewritten to it, so they resolve inside the bundle.
+local function copyInto(src: path.Pathlike, dest: path.Pathlike, storeFromHere: string)
 	fs.createDirectory(dest, { makeParents = true })
 	for _, entry in fs.listDirectory(src) do
-		copyInto(path.join(src, entry.name), path.join(dest, entry.name))
+		local from, to = path.join(src, entry.name), path.join(dest, entry.name)
+		if entry.type == "dir" then
+			copyInto(from, to, `../{storeFromHere}`)
+		elseif CONFIG_FILES[entry.name] then
+			local config = fs.readFileToString(from):gsub("~/%.loom/store", storeFromHere)
+			fs.writeStringToFile(to, config)
+		else
+			fs.copy(from, to)
+		end
 	end
 end
 
 -- `lute compile` stores each bundled file by its path under the deepest folder
 -- that all of them share, and the binary looks up a `~/` alias like
--- `~/.loom/store/x` at `.loom/store/x` under that folder. So the binary finds
--- the Loom store only when that folder is the home folder. A checkout outside
--- the home folder pulls it up to the drive root, or to nothing when the
--- checkout and the store are on different drives.
+-- `~/.loom/store/x` at `.loom/store/x` under that folder. So a binary bundled
+-- straight from the Loom store finds its dependencies only when that folder is
+-- the home folder, which fails for a checkout outside it.
 --
 -- To keep every bundled file under one folder, this copies the sources into a
--- staging folder inside `build/`, along with each dependency whose alias in the
--- committed `.config.luau` points into the Loom store. The staged
--- `.config.luau` points those aliases at the copies and keeps every other
--- alias as it is. `@std` and `@lute` are built into Lute, so nothing is bundled
--- from their typedefs.
+-- staging folder inside `build/`, and each store folder in the lockfile into
+-- `store/` beside them. Every `.config.luau` and `.luaurc` in the copy, the
+-- root one included, points its store aliases at that `store/` folder instead.
+-- `@std` and `@lute` are built into Lute, so nothing is bundled from their
+-- typedefs.
 local function stage()
 	if fs.exists(STAGE_PATH) then
 		fs.removeDirectory(STAGE_PATH, { recursive = true })
 	end
 	fs.createDirectory(STAGE_PATH, { makeParents = true })
 
-	for _, source in SOURCES do
-		copyInto(source, path.join(STAGE_PATH, source))
-	end
+	local config = fs.readFileToString(".config.luau"):gsub("~/%.loom/store", "./store")
+	fs.writeStringToFile(path.join(STAGE_PATH, ".config.luau"), config)
+	fs.copy("cli.luau", path.join(STAGE_PATH, "cli.luau"))
+	copyInto("src", path.join(STAGE_PATH, "src"), "../store")
 
-	local config = luau.loadModule(".config.luau")
-	local lines = {}
-	for alias, value in config.luau.aliases do
-		if value:sub(1, #STORE_PREFIX) == STORE_PREFIX then
-			local storePath = path.join(process.homedir(), (value:gsub("^~/", "")))
-			copyInto(storePath, path.join(STAGE_PATH, "packages", alias))
-			value = `./packages/{alias}`
+	-- The lockfile writes `@pkg/` for the store. Dependencies from the same
+	-- repository, like Lute's batteries, share a store folder.
+	local lockfile: Lockfile = luau.loadModule("pkg.lock.luau")
+	for _, package in lockfile.packages do
+		local folder = package.installPath:match("^@pkg/([^/]+)")
+		assert(folder, `Unexpected install path {package.installPath}`)
+		local dest = path.join(STAGED_STORE_PATH, folder)
+		if not fs.exists(dest) then
+			copyInto(path.join(STORE_PATH, folder), dest, "..")
 		end
-		local key = if alias:match("^[%a_][%w_]*$") then alias else `["{alias}"]`
-		table.insert(lines, `\t\t\t{key} = "{value}",`)
 	end
-	table.sort(lines)
-
-	local contents = table.concat({
-		"return {",
-		"\tluau = {",
-		`\t\tlanguagemode = "{config.luau.languagemode}",`,
-		"\t\taliases = {",
-		table.concat(lines, "\n"),
-		"\t\t},",
-		"\t},",
-		"}",
-		"",
-	}, "\n")
-	fs.writeStringToFile(path.join(STAGE_PATH, ".config.luau"), contents)
 end
 
 local outputPath = tostring(project.BUILD_OUTPUT)
@@ -97,3 +93,8 @@ local result = process.run({
 	stdio = "inherit",
 })
 assert(result.ok, "lute compile failed")
+
+-- A binary missing a package still compiles but fails on its first require, so
+-- running it once here catches that before anything ships it.
+local smoke = process.run({ outputPath, "--help" })
+assert(smoke.ok, `{outputPath} failed to start: {smoke.stderr}`)
