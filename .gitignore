@@ -2,4 +2,3 @@
 build/
 .env*
 !.env.template
-pkg.lock.luau
