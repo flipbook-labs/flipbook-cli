@@ -1,4 +1,4 @@
-local cli = require("@batteries/cli")
+local cli = require("@lpm/batteries@v1.0.1-nightly.20261115/cli")
 local test = require("@std/test")
 
 local comment = require("@root/cli/commands/comment")

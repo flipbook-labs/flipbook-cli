@@ -4,7 +4,7 @@ return {
 		version = "0.6.0",
 		dependencies = {
 			["flipbook-batteries"] = {
-				rev = "v0.13.0",
+				rev = "v0.13.1",
 				sourceKind = "github",
 				source = "https://github.com/flipbook-labs/flipbook-batteries",
 			},
