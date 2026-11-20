@@ -79,13 +79,13 @@ flipbook-cli uses [Rokit](https://github.com/rojo-rbx/rokit) for toolchain manag
 
 ```sh
 rokit install
-lute run install   # install Loom dependencies and vendor them into packages/
+lute run install   # install the dependencies in pkg.luau
 lute run analyze   # run the stylua and luau-lsp checks
 lute run build     # compile the flipbook-cli binary into build/
 lute test          # run the *.spec.luau test suite
 ```
 
-`lute run install` fetches the Loom dependencies and vendors them into `packages/` so they can be bundled into the compiled binary. It also fetches the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library that [`AGENTS.md`](AGENTS.md) routes agents to. That library is a dev dependency, so it installs into `~/.loom/store` but is not bundled into the binary.
+`lute run install` copies the dependencies in [`pkg.luau`](pkg.luau) into the gitignored `.lpm/` folder, which code requires through the `@lpm` alias, and `lute run build` bundles them into the compiled binary from there. It also fetches the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library that [`AGENTS.md`](AGENTS.md) routes agents to. That library is a dev dependency, so it lands in `.lpm/` but is not bundled into the binary.
 
 ## Releasing
 
@@ -94,7 +94,7 @@ which bundles the full release lifecycle (gate, draft, attach, publish, and the
 version-bump PR) into a single GitHub Action. The release workflow
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)) builds the
 cross-platform binaries, then hands the version source ([`changewrite.toml`](changewrite.toml),
-mirrored to `loom.config.luau`) to the action, which attaches the binaries to the draft release via a
+mirrored to `pkg.luau`) to the action, which attaches the binaries to the draft release via a
 `post-draft-hook`.
 
 ## Environment variables
