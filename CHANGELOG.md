@@ -3,6 +3,45 @@
 All notable changes to this project will be documented in this file.
 
 
+## v0.7.0
+
+Features 1 · Changes 3 · Fixes 1 · Dependencies 4 · Internal 4
+
+### Features
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-comment-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-comment-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-comment-light.png" alt="Comment" height="18" align="texttop"></picture> Add `--launch-data` to include launch data in storybook preview links. ([#60](https://github.com/flipbook-labs/flipbook-cli/pull/60))
+
+### Changes
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-light.png" alt="Packages" height="18" align="texttop"></picture> Upgrade the runtime dependencies: FlipbookBatteries `v0.9.0` → `v0.12.0` and Lute `v1.0.1-nightly.20260521` → `v1.0.1-nightly.20260701`. ([#51](https://github.com/flipbook-labs/flipbook-cli/pull/51))
+2. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Releases are now handled by the [changewrite](https://github.com/flipbook-labs/changewrite) action, which bundles the whole release lifecycle (gate, draft, attach, publish, and the version-bump PR) into a single workflow step, replacing the bespoke `release` command and its multi-job workflow. ([#51](https://github.com/flipbook-labs/flipbook-cli/pull/51))
+3. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Release automation reads the public Flipbook Backend App Client ID from an organization variable. ([#63](https://github.com/flipbook-labs/flipbook-cli/pull/63))
+
+### Fixes
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Package the Windows binary in releases by installing `zip` on the Windows runner. ([#58](https://github.com/flipbook-labs/flipbook-cli/pull/58))
+
+<details>
+<summary>Dependencies (4)</summary>
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Upgrade the changewrite action and CLI `v0.5.0` → `v0.6.0`. The CI changelog check now fetches full git history so `require-entry` can compare the branch against its base. ([#56](https://github.com/flipbook-labs/flipbook-cli/pull/56))
+2. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-light.png" alt="Contributing" height="18" align="texttop"></picture> Consume the shared [agent-skills](https://github.com/flipbook-labs/agent-skills) library `v0.3.0` as a Loom dev dependency, and add `AGENTS.md`/`CLAUDE.md` guidance routing agents to it. The library installs into `~/.loom/store` for agents to read but is not bundled into the binary. ([#57](https://github.com/flipbook-labs/flipbook-cli/pull/57))
+3. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-contributing-light.png" alt="Contributing" height="18" align="texttop"></picture> Upgrade AgentSkills `v0.3.0` → `v0.4.0`. ([#59](https://github.com/flipbook-labs/flipbook-cli/pull/59))
+4. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-packages-light.png" alt="Packages" height="18" align="texttop"></picture> Build on Lute `1.0.1-nightly.20261117` with dependencies in `pkg.luau` vendored into `.lpm/`, using flipbook-batteries `v0.13.1` to load `.env` in place of lute-dotenv. ([#68](https://github.com/flipbook-labs/flipbook-cli/pull/68))
+
+</details>
+
+<details>
+<summary>Internal (4)</summary>
+
+1. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-ci-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-ci-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-ci-light.png" alt="CI" height="18" align="texttop"></picture> Build the macOS, Linux, and Windows binaries on every pull request. ([#55](https://github.com/flipbook-labs/flipbook-cli/pull/55))
+2. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Upgrade the Changewrite release action to `v0.7.0` and adopt its `publish-lock` check. ([#59](https://github.com/flipbook-labs/flipbook-cli/pull/59))
+3. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Upgrade the Changewrite release actions and CLI to `v0.12.0`. ([#66](https://github.com/flipbook-labs/flipbook-cli/pull/66))
+4. <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.svg"><img src="https://raw.githubusercontent.com/flipbook-labs/flipbook-cli/main/.changes/assets/kind-release-light.png" alt="Release" height="18" align="texttop"></picture> Configure Changewrite kinds so release notes show where each change landed, and collapse the Dependencies and Internal sections. ([#67](https://github.com/flipbook-labs/flipbook-cli/pull/67))
+
+</details>
+
+
 ## v0.6.0
 
 ### Changes
@@ -112,4 +151,3 @@ All notable changes to this project will be documented in this file.
 - Add CI workflow and refactor deployment commands for flipbook-cli ([5b3b5ac](https://github.com/flipbook-labs/flipbook-cli/commit/5b3b5ac63fe9f8dcb71f09815acb48aabebb35eb))
 
 - Initial commit ([940f691](https://github.com/flipbook-labs/flipbook-cli/commit/940f69186520dafb5a3ab4819cfa7b094a8ef38b))
-
