@@ -52,6 +52,8 @@ Running `comment` again on the same pull request edits the comment it posted ear
 
 Publishes `--place-file` to a place in your universe, then injects the Flipbook runtime from the latest [GitHub release](https://github.com/flipbook-labs/flipbook/releases). The place is found by name in Roblox, and it is created when no place has that name. The CLI keeps no local state.
 
+The release download is unauthenticated unless `GITHUB_TOKEN` is set. Set it on shared CI runners, which can hit GitHub's rate limit for anonymous requests.
+
 | Flag              | Description                                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------------------------------ |
 | `--place-name`    | **Required.** Name of the place to update, or to create.                                                     |
