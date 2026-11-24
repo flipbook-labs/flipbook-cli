@@ -27,4 +27,4 @@ Add a [`.changes/`](.changes) entry for each user-facing change. The [`.changes/
 
 ## Releasing
 
-Releases are handled by [changewrite](https://github.com/flipbook-labs/changewrite), which bundles the release lifecycle into one GitHub Action. The release workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml)) builds the binaries and hands the version source, [`changewrite.toml`](changewrite.toml) mirrored to [`pkg.luau`](pkg.luau), to the action. The action attaches the binaries to the draft release through its `post-draft-hook`.
+Releases are handled by [changewrite](https://github.com/flipbook-labs/changewrite), which bundles the release lifecycle into one GitHub Action. The release workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml)) builds the binaries and hands the version source, [`changewrite.luau`](changewrite.luau) mirrored to [`pkg.luau`](pkg.luau), to the action. The action attaches the binaries to the draft release through its `post-draft-hook`.
