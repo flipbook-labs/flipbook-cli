@@ -8,4 +8,5 @@ run("luau-lsp", {
 	"analyze",
 	"--settings=./.vscode/settings.json",
 	"workspace/flipbook-cli/src",
+	"workspace/svg-buttons/src",
 })

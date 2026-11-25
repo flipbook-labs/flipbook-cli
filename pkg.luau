@@ -14,6 +14,7 @@ return {
 	package = {
 		dependencies = {
 			["flipbook-cli"] = member("flipbook-cli"),
+			["svg-buttons"] = member("svg-buttons"),
 		},
 		dev_dependencies = {
 			["agent-skills"] = {
