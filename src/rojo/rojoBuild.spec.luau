@@ -37,6 +37,21 @@ local FLIPBOOK_MODEL = [[
 </roblox>
 ]]
 
+-- Returns the text of the named instance, up to where its <Item> closes.
+local function getItem(place: string, name: string): string
+	local start = place:find(`<string name="Name">{name}</string>`, 1, true)
+	assert(start, `{name} isn't in the place`)
+
+	local depth = 1
+	for position, closing in place:sub(start):gmatch("()<(/?)Item") do
+		depth += if closing == "/" then -1 else 1
+		if depth == 0 then
+			return place:sub(start, start + (tonumber(position) :: number) - 2)
+		end
+	end
+	error(`{name} never closes`)
+end
+
 test.suite("rojoBuild", function(suite)
 	local dir = path.join(system.tmpdir(), "flipbook cli rojoBuild spec")
 	local storiesPath = path.join(dir, "stories.rbxmx")
@@ -67,11 +82,12 @@ test.suite("rojoBuild", function(suite)
 
 	suite:case("mounts the stories and their packages under ReplicatedStorage.Stories", function(assert)
 		local place = build()
-		local storage = place:match('class="ReplicatedStorage".*')
+		local storage = place:match('<Item class="ReplicatedStorage".*')
 		assert.that(storage ~= nil)
-		assert.strContains(storage :: string, '<string name="Name">Stories</string>')
-		assert.strContains(storage :: string, '<string name="Name">Packages</string>')
-		assert.strContains(storage :: string, 'return "button story"')
+
+		local stories = getItem(storage :: string, "Stories")
+		assert.strContains(stories, '<string name="Name">Packages</string>')
+		assert.strContains(stories, 'return "button story"')
 	end)
 
 	suite:case("names the Flipbook model Flipbook whatever it is called in its file", function(assert)
