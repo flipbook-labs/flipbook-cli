@@ -16,7 +16,16 @@ test.suite("storybookPreviewComment", function(suite)
 <a href="https://www.roblox.com/games/101"><img src="https://images.example/preview.png" alt="Flipbook Storybook preview" align="right" width="30%"></a>
 
 - [Experience page ↗](https://www.roblox.com/games/101)
-- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
+- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)
+
+<details>
+<summary>📱 Preview on mobile</summary>
+
+Scan to join the preview in the Roblox app.
+
+<a href="https://www.roblox.com/games/start?placeId=101"><img src="https://apis.flipbooklabs.com/storybook/qr/101.svg" alt="QR code for the Storybook preview join link" width="160"></a>
+
+</details>]]
 		)
 	end)
 
@@ -30,7 +39,30 @@ test.suite("storybookPreviewComment", function(suite)
 			[[## Storybook preview
 
 - [Experience page ↗](https://www.roblox.com/games/101)
-- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
+- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)
+
+<details>
+<summary>📱 Preview on mobile</summary>
+
+Scan to join the preview in the Roblox app.
+
+<a href="https://www.roblox.com/games/start?placeId=101"><img src="https://apis.flipbooklabs.com/storybook/qr/101.svg" alt="QR code for the Storybook preview join link" width="160"></a>
+
+</details>]]
+		)
+	end)
+
+	suite:case("encodes launch data into the QR code URL", function(assert)
+		local body = storybookPreviewComment({
+			placeId = 101,
+			launchData = '{"search":"Button"}',
+			template = "{{launchUrl}}\n{{qrCodeUrl}}",
+		})
+
+		assert.eq(
+			body,
+			"https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D\n"
+				.. "https://apis.flipbooklabs.com/storybook/qr/101.svg?launchData=%7B%22search%22%3A%22Button%22%7D"
 		)
 	end)
 
@@ -44,7 +76,9 @@ test.suite("storybookPreviewComment", function(suite)
 
 [Open experience]({{experienceUrl}}) · [Join focused preview]({{launchUrl}})
 
-Raw image: {{thumbnailUrl}}]],
+Raw image: {{thumbnailUrl}}
+
+{{qrCodeMarkdown}}]],
 			thumbnailUrl = "https://images.example/preview%20image.png",
 		})
 
@@ -56,7 +90,9 @@ Raw image: {{thumbnailUrl}}]],
 
 [Open experience](https://www.roblox.com/games/101) · [Join focused preview](https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D)
 
-Raw image: https://images.example/preview%20image.png]]
+Raw image: https://images.example/preview%20image.png
+
+[![QR code for the Storybook preview join link](https://apis.flipbooklabs.com/storybook/qr/101.svg?launchData=%7B%22search%22%3A%22Button%22%7D)](https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D)]]
 		)
 	end)
 

@@ -65,7 +65,7 @@ The release download is unauthenticated unless `GITHUB_TOKEN` is set. Set it on 
 
 ### comment
 
-Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready.
+Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready. A collapsed "Preview on mobile" section holds a QR code for the join link, so a reviewer can scan it to open the preview in the Roblox app on their phone.
 
 | Flag                  | Description                                                |
 | --------------------- | ---------------------------------------------------------- |
@@ -86,6 +86,8 @@ Pass `--comment-template` to write the comment's copy and layout yourself. The t
 | `{{launchUrl}}`         | Direct join URL, including `--launch-data` when supplied.                       |
 | `{{thumbnailUrl}}`      | Experience thumbnail URL, or an empty string when the thumbnail is unavailable. |
 | `{{thumbnailMarkdown}}` | Linked experience thumbnail, or an empty string when it is unavailable.         |
+| `{{qrCodeUrl}}`         | QR code image for the direct join URL, served by flipbook-backend.              |
+| `{{qrCodeMarkdown}}`    | QR code image linked to the direct join URL.                                    |
 
 ```sh
 flipbook-cli comment --pr 42 --universe-id 123 --place-name "Flipbook Stories 42" --comment-template '## Component preview
