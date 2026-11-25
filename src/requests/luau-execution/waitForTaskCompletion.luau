@@ -1,7 +1,7 @@
 local json = require("@std/json")
 local task = require("@std/task")
 
-local constants = require("@root/requests/binary-input/constants")
+local constants = require("@root/requests/luau-execution/constants")
 local fetch = require("@root/requests/fetch")
 local types = require("@root/types")
 

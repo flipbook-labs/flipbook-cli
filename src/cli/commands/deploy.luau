@@ -1,17 +1,20 @@
 local cli = require("@lpm/batteries@v1.0.1-nightly.20261115/cli")
 local fs = require("@std/fs")
+local path = require("@std/path")
 local process = require("@std/process")
 
+local createStorybookProject = require("@root/rojo/createStorybookProject")
 local getFlipbookRbxmAsync = require("@root/requests/getFlipbookRbxmAsync")
 local getOrCreatePlaceByNameAsync = require("@root/requests/getOrCreatePlaceByNameAsync")
+local getTempDir = require("@root/getTempDir")
 local getUniverseStartPlaceAsync = require("@root/requests/getUniverseStartPlaceAsync")
-local injectFlipbookAsync = require("@root/requests/injectFlipbookAsync")
 local publishPlaceAsync = require("@root/requests/publishPlaceAsync")
+local rojoBuild = require("@root/rojo/rojoBuild")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
 local types = require("@root/cli/types")
 
 local title = "deploy"
-local summary = "Deploy a place file containing your storybooks to an experience with an embedded version of Flipbook."
+local summary = "Deploy a model file containing your storybooks to an experience with an embedded version of Flipbook."
 
 local parser = cli.parser()
 
@@ -26,8 +29,8 @@ parser:add("universe-id", "option", {
 	help = "Universe to deploy to.",
 	required = true,
 })
-parser:add("place-file", "option", {
-	help = "Path to an rbxl place file containing your storybooks and stories.",
+parser:add("stories", "option", {
+	help = "Path to an rbxm model file containing your storybooks, your stories, and the packages they require.",
 	required = true,
 })
 parser:add("place-id", "option", {
@@ -51,10 +54,10 @@ local function run()
 	local universeIdStr = parser:get("universe-id")
 	local universeId = assert(tonumber(universeIdStr), `--universe-id must be a number, got "{universeIdStr}"`)
 
-	local placeFilePath = parser:get("place-file") :: string
+	local storiesPath = parser:get("stories") :: string
 	assert(
-		fs.exists(placeFilePath) and fs.type(placeFilePath) == "file",
-		`--place-file must be an existing rbxl file: {placeFilePath}`
+		fs.exists(storiesPath) and fs.type(storiesPath) == "file" and path.extname(storiesPath) == ".rbxm",
+		`--stories must be an existing rbxm file: {storiesPath}`
 	)
 
 	local placeId = tonumber(parser:get("place-id"))
@@ -66,6 +69,18 @@ local function run()
 			`--flipbook-rbxm must be an existing rbxm file: {flipbookRbxm}`
 		)
 	end
+
+	local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
+
+	print("Building the storybook place...")
+	local placeFilePath = rojoBuild({
+		output = path.join(getTempDir(), `storybook-{os.time()}.rbxl`),
+		project = createStorybookProject({
+			name = placeName,
+			storiesPath = storiesPath,
+			flipbookRbxmPath = flipbookRbxmPath,
+		}),
+	})
 
 	local startPlaceId = getUniverseStartPlaceAsync(universeId, apiKey)
 
@@ -79,13 +94,6 @@ local function run()
 
 	print(`Publishing place file to "{placeName}" (place {targetPlaceId})...`)
 	publishPlaceAsync(universeId, targetPlaceId, placeFilePath, apiKey)
-
-	local flipbookRbxmPath = if flipbookRbxm then flipbookRbxm else getFlipbookRbxmAsync()
-	injectFlipbookAsync(flipbookRbxmPath, {
-		universeId = universeId,
-		placeId = targetPlaceId,
-		apiKey = apiKey,
-	})
 
 	print(`Deployed storybook "{placeName}" to place {targetPlaceId}`)
 	print(`View: https://roblox.com/games/{targetPlaceId}`)

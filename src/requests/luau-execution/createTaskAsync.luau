@@ -1,20 +1,12 @@
 local json = require("@std/json")
 
-local constants = require("@root/requests/binary-input/constants")
+local constants = require("@root/requests/luau-execution/constants")
 local fetch = require("@root/requests/fetch")
 local types = require("@root/types")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
-local function createTaskAsync(ctx: LuauExecutionContext, script: string, binaryInputPath: string?): { path: string }
-	local body: { [string]: any } = {
-		script = script,
-		timeout = "300s",
-	}
-	if binaryInputPath then
-		body.binaryInput = binaryInputPath
-	end
-
+local function createTaskAsync(ctx: LuauExecutionContext, script: string): { path: string }
 	local response =
 		fetch(`{constants.CLOUD_BASE}/universes/{ctx.universeId}/places/{ctx.placeId}/luau-execution-session-tasks`, {
 			method = "POST",
@@ -22,7 +14,10 @@ local function createTaskAsync(ctx: LuauExecutionContext, script: string, binary
 				["x-api-key"] = ctx.apiKey,
 				["content-type"] = "application/json",
 			},
-			body = json.serialize(body),
+			body = json.serialize({
+				script = script,
+				timeout = "300s",
+			}),
 		})
 
 	local obj = json.asObject(response)

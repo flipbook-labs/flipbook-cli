@@ -1,13 +1,9 @@
-local fs = require("@std/fs")
 local json = require("@std/json")
-local path = require("@std/path")
 
-local createBinaryInputAsync = require("@root/requests/binary-input/createBinaryInputAsync")
-local createTaskAsync = require("@root/requests/binary-input/createTaskAsync")
-local getTaskLogsAsync = require("@root/requests/binary-input/getTaskLogsAsync")
+local createTaskAsync = require("@root/requests/luau-execution/createTaskAsync")
+local getTaskLogsAsync = require("@root/requests/luau-execution/getTaskLogsAsync")
 local types = require("@root/types")
-local uploadBinaryFileAsync = require("@root/requests/binary-input/uploadBinaryFileAsync")
-local waitForTaskCompletion = require("@root/requests/binary-input/waitForTaskCompletion")
+local waitForTaskCompletion = require("@root/requests/luau-execution/waitForTaskCompletion")
 
 type LuauExecutionContext = types.LuauExecutionContext
 
@@ -18,10 +14,7 @@ type LuauExecutionContext = types.LuauExecutionContext
 local function runTaskAsync(
 	script: string,
 	globals: { [string]: string | number | boolean },
-	luauExecutionContext: LuauExecutionContext,
-	-- Path to a file that will be accessible inside the task script as a
-	-- buffer. Usage: `({ ... })[1].BinaryInput`
-	binaryInput: path.Pathlike?
+	luauExecutionContext: LuauExecutionContext
 ): unknown
 	local parts = {}
 	for key, value in globals do
@@ -29,15 +22,7 @@ local function runTaskAsync(
 	end
 	local entryScript = table.concat(parts) .. script
 
-	local binaryInputResourcePath: string? = nil
-	if binaryInput then
-		local contents = fs.readFileToString(binaryInput)
-		local reservedBinaryInput = createBinaryInputAsync(luauExecutionContext, #contents)
-		uploadBinaryFileAsync(reservedBinaryInput.uploadUri, contents)
-		binaryInputResourcePath = reservedBinaryInput.path
-	end
-
-	local createdTask = createTaskAsync(luauExecutionContext, entryScript, binaryInputResourcePath)
+	local createdTask = createTaskAsync(luauExecutionContext, entryScript)
 	local completedTask = waitForTaskCompletion(luauExecutionContext, createdTask.path)
 
 	local logs = getTaskLogsAsync(luauExecutionContext, createdTask.path)
