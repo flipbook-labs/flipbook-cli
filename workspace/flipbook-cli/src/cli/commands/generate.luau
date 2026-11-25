@@ -1,10 +1,11 @@
 local cli = require("@lpm/batteries@v1.0.1-nightly.20261115/cli")
-local fs = require("@std/fs")
 local path = require("@std/path")
 local process = require("@std/process")
 
 local SvgButtons = require("@workspace/svg-buttons")
 
+local buttonFiles = require("@root/buttonFiles")
+local getRepositoryRoot = require("@root/getRepositoryRoot")
 local previewButtons = require("@root/previewButtons")
 local types = require("@root/cli/types")
 
@@ -23,40 +24,27 @@ parser:add("help", "flag", {
 })
 
 local function run()
-	local dir = parser:get("assets-dir") or previewButtons.DEFAULT_ASSETS_DIR
-	local files = SvgButtons.generateButtons(previewButtons.BUTTONS)
-
-	local stale = {}
-	for _, file in files do
-		local target = path.join(dir, file.name)
-		if not fs.exists(target) or fs.readFileToString(target) ~= file.contents then
-			table.insert(stale, file)
-		end
-	end
+	local assetsDir = parser:get("assets-dir") or previewButtons.DEFAULT_ASSETS_DIR
+	local dir = path.resolve(getRepositoryRoot(), assetsDir)
+	local stale = buttonFiles.findStale(dir, SvgButtons.generateButtons(previewButtons.BUTTONS))
 
 	if parser:has("check") then
 		if #stale == 0 then
-			print(`Buttons in {dir} are up to date.`)
+			print(`Buttons in {assetsDir} are up to date.`)
 			return
 		end
-		local command = if dir == previewButtons.DEFAULT_ASSETS_DIR
+		local command = if assetsDir == previewButtons.DEFAULT_ASSETS_DIR
 			then "flipbook-cli generate"
-			else `flipbook-cli generate --assets-dir {dir}`
-		print(`Buttons in {dir} are missing or out of date. Run \`{command}\` and commit the result:`)
+			else `flipbook-cli generate --assets-dir {assetsDir}`
+		print(`Buttons in {assetsDir} are missing or out of date. Run \`{command}\` and commit the result:`)
 		for _, file in stale do
 			print(`  • {file.name}`)
 		end
 		process.exit(1)
 	end
 
-	if not fs.exists(dir) then
-		fs.createDirectory(dir, { makeParents = true })
-	end
-	for _, file in stale do
-		fs.writeStringToFile(path.join(dir, file.name), file.contents)
-	end
-
-	print(`Generated {#previewButtons.BUTTONS} buttons in {dir} ({#stale} files written).`)
+	buttonFiles.write(dir, stale)
+	print(`Generated {#previewButtons.BUTTONS} buttons in {assetsDir} ({#stale} files written).`)
 end
 
 local command: types.Command = {
