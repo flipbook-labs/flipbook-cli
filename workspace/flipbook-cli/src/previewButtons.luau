@@ -6,12 +6,13 @@ type ButtonSpec = SvgButtons.ButtonSpec
 -- the repository root, unless `--assets-dir` says otherwise.
 local DEFAULT_ASSETS_DIR = ".github/deploy-storybook/assets"
 
--- The preview comment's buttons. Joining is the main action, so it gets the
--- filled button, and the experience page gets an outlined one.
+-- The preview comment's buttons. Opening the Storybook is the main action, so
+-- it gets the filled button, and the experience page on Roblox gets an
+-- outlined one.
 local BUTTONS: { ButtonSpec } = {
 	{
 		name = "join",
-		label = "Join preview",
+		label = "Open Storybook",
 		leadingIcon = "play",
 		colorMode = {
 			light = { fill = "#8250df", border = "#6e40c9", text = "#ffffff" },
@@ -20,7 +21,7 @@ local BUTTONS: { ButtonSpec } = {
 	},
 	{
 		name = "experience",
-		label = "Experience page",
+		label = "View on Roblox",
 		trailingIcon = "external",
 		colorMode = {
 			light = { fill = "#f6f8fa", border = "#d1d9e0", text = "#25292e" },
