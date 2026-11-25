@@ -13,9 +13,10 @@ test.suite("storybookPreviewComment", function(suite)
 			body,
 			[[## Storybook preview
 
-[![Flipbook Storybook preview](https://images.example/preview.png)](https://www.roblox.com/games/101)
+<a href="https://www.roblox.com/games/101"><img src="https://images.example/preview.png" alt="Flipbook Storybook preview" align="right" width="30%"></a>
 
-[Experience page ↗](https://www.roblox.com/games/101) · [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
+- [Experience page ↗](https://www.roblox.com/games/101)
+- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
 		)
 	end)
 
@@ -28,7 +29,8 @@ test.suite("storybookPreviewComment", function(suite)
 			body,
 			[[## Storybook preview
 
-[Experience page ↗](https://www.roblox.com/games/101) · [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
+- [Experience page ↗](https://www.roblox.com/games/101)
+- [▶ Join preview](https://www.roblox.com/games/start?placeId=101)]]
 		)
 	end)
 

@@ -9,13 +9,15 @@ export type Options = {
 
 local DEFAULT_TEMPLATE = [[## Storybook preview
 
-[Experience page ↗]({{experienceUrl}}) · [▶ Join preview]({{launchUrl}})]]
+- [Experience page ↗]({{experienceUrl}})
+- [▶ Join preview]({{launchUrl}})]]
 
 local DEFAULT_TEMPLATE_WITH_THUMBNAIL = [[## Storybook preview
 
-{{thumbnailMarkdown}}
+<a href="{{experienceUrl}}"><img src="{{thumbnailUrl}}" alt="Flipbook Storybook preview" align="right" width="30%"></a>
 
-[Experience page ↗]({{experienceUrl}}) · [▶ Join preview]({{launchUrl}})]]
+- [Experience page ↗]({{experienceUrl}})
+- [▶ Join preview]({{launchUrl}})]]
 
 local function storybookPreviewComment(options: Options): string
 	local experienceUrl = `https://www.roblox.com/games/{options.placeId}`
