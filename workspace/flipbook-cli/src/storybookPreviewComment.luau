@@ -11,7 +11,7 @@ export type PublishedFrom = {
 
 export type Options = {
 	-- Where the button images live, such as a raw.githubusercontent.com folder.
-	-- The comment shows text links instead when this is nil.
+	-- Each button falls back to a text link when this is nil.
 	buttonsBaseUrl: string?,
 	launchData: string?,
 	placeId: number,
@@ -42,6 +42,12 @@ local function renderButton(baseUrl: string, name: string, href: string): string
 		.. `</picture></a>`
 end
 
+-- The text link a button falls back to when its images can't load.
+local function renderLink(name: string, href: string): string
+	local label = getButtonLabel(name)
+	return if name == "join" then `[▶ {label}]({href})` else `[{label} ↗]({href})`
+end
+
 local function renderFooter(publishedFrom: PublishedFrom): string
 	local sha = string.sub(publishedFrom.sha, 1, 7)
 	local run = if publishedFrom.runNumber and publishedFrom.runUrl
@@ -64,10 +70,19 @@ end
 local function storybookPreviewComment(options: Options): string
 	local experienceUrl = `https://www.roblox.com/games/{options.placeId}`
 	local launchUrl = storybookPreviewUrl(options.placeId, options.launchData)
+	local buttonsBaseUrl = options.buttonsBaseUrl
+	local launchButton = if buttonsBaseUrl
+		then renderButton(buttonsBaseUrl, "join", launchUrl)
+		else renderLink("join", launchUrl)
+	local experienceButton = if buttonsBaseUrl
+		then renderButton(buttonsBaseUrl, "experience", experienceUrl)
+		else renderLink("experience", experienceUrl)
 
 	if options.template then
 		return renderTemplate(options.template, {
+			experienceButton = experienceButton,
 			experienceUrl = experienceUrl,
+			launchButton = launchButton,
 			launchUrl = launchUrl,
 			thumbnailMarkdown = if options.thumbnailUrl
 				then `[![Flipbook Storybook preview]({options.thumbnailUrl})]({experienceUrl})`
@@ -85,21 +100,12 @@ local function storybookPreviewComment(options: Options): string
 		)
 	end
 
-	if options.buttonsBaseUrl then
-		table.insert(
-			sections,
-			`{renderButton(options.buttonsBaseUrl, "join", launchUrl)} {renderButton(
-				options.buttonsBaseUrl,
-				"experience",
-				experienceUrl
-			)}`
-		)
-	else
-		table.insert(
-			sections,
-			`- [▶ {getButtonLabel("join")}]({launchUrl})\n- [{getButtonLabel("experience")} ↗]({experienceUrl})`
-		)
-	end
+	-- Buttons sit side by side. Text links stack as a list so each reads as
+	-- its own action.
+	table.insert(
+		sections,
+		if buttonsBaseUrl then `{launchButton} {experienceButton}` else `- {launchButton}\n- {experienceButton}`
+	)
 
 	if options.publishedFrom then
 		table.insert(sections, renderFooter(options.publishedFrom))

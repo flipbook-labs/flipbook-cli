@@ -82,6 +82,31 @@ Raw image: https://images.example/preview%20image.png]]
 		)
 	end)
 
+	suite:case("fills each button placeholder in a custom template", function(assert)
+		local body = storybookPreviewComment({
+			buttonsBaseUrl = BASE_URL,
+			placeId = 101,
+			template = "{{launchButton}}\n\n{{experienceButton}}",
+		})
+
+		assert.strContains(body, `<a href="https://www.roblox.com/games/start?placeId=101"><picture>`)
+		assert.strContains(body, `alt="Open Storybook"`)
+		assert.strContains(body, `<a href="https://www.roblox.com/games/101"><picture>`)
+		assert.strContains(body, `alt="View on Roblox"`)
+	end)
+
+	suite:case("fills button placeholders with text links without buttons", function(assert)
+		local body = storybookPreviewComment({
+			placeId = 101,
+			template = "{{launchButton}} · {{experienceButton}}",
+		})
+
+		assert.eq(
+			body,
+			"[▶ Open Storybook](https://www.roblox.com/games/start?placeId=101) · [View on Roblox ↗](https://www.roblox.com/games/101)"
+		)
+	end)
+
 	suite:case("omits unavailable thumbnail placeholders", function(assert)
 		local body = storybookPreviewComment({
 			placeId = 101,

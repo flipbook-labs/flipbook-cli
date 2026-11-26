@@ -51,6 +51,14 @@ parser:add("help", "flag", {
 	help = "Show this help message",
 })
 
+-- Custom templates without a button placeholder skip the button lookup, and
+-- its log line about falling back to text links.
+local function usesButtons(template: string?): boolean
+	return template == nil
+		or string.find(template, "{{launchButton}}", 1, true) ~= nil
+		or string.find(template, "{{experienceButton}}", 1, true) ~= nil
+end
+
 -- Looks up the button images on the default branch. When the comment can't
 -- show them, it says why in the log and the comment falls back to text links.
 local function findButtonsBaseUrlAsync(repo: string, assetsDir: string, githubToken: string): string?
@@ -132,7 +140,9 @@ local function run()
 	)
 
 	local body = `{PR_COMMENT_MARKER}\n{storybookPreviewComment({
-		buttonsBaseUrl = if commentTemplate then nil else findButtonsBaseUrlAsync(repo, assetsDir, githubToken),
+		buttonsBaseUrl = if usesButtons(commentTemplate)
+			then findButtonsBaseUrlAsync(repo, assetsDir, githubToken)
+			else nil,
 		placeId = targetPlaceId,
 		launchData = launchData,
 		publishedFrom = getPublishedFrom(repo, prNumber, githubToken),

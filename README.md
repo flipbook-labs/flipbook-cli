@@ -87,21 +87,23 @@ The buttons load from `--assets-dir` on the repository's default branch. The com
 | `--github-token`      | GitHub token. Falls back to `GITHUB_TOKEN`.                                                   |
 | `--github-repository` | `owner/repo`. Falls back to `GITHUB_REPOSITORY`.                                              |
 
-Pass `--comment-template` to write the comment's copy and layout yourself. A custom template replaces the buttons and the footer, and supports these placeholders:
+Pass `--comment-template` to write the comment's copy and layout yourself. A custom template replaces the default layout and footer, and supports these placeholders:
 
-| Placeholder             | Value                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `{{experienceUrl}}`     | Roblox experience page for the deployed place.                                  |
-| `{{launchUrl}}`         | Direct join URL, including `--launch-data` when supplied.                       |
-| `{{thumbnailUrl}}`      | Experience thumbnail URL, or an empty string when the thumbnail is unavailable. |
-| `{{thumbnailMarkdown}}` | Linked experience thumbnail, or an empty string when it is unavailable.         |
+| Placeholder             | Value                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `{{experienceUrl}}`     | Roblox experience page for the deployed place.                                                            |
+| `{{launchUrl}}`         | Direct join URL, including `--launch-data` when supplied.                                                 |
+| `{{launchButton}}`      | **Open Storybook** button linked to `{{launchUrl}}`, or a text link when the buttons are unavailable.     |
+| `{{experienceButton}}`  | **View on Roblox** button linked to `{{experienceUrl}}`, or a text link when the buttons are unavailable. |
+| `{{thumbnailUrl}}`      | Experience thumbnail URL, or an empty string when the thumbnail is unavailable.                           |
+| `{{thumbnailMarkdown}}` | Linked experience thumbnail, or an empty string when it is unavailable.                                   |
 
 ```sh
 flipbook-cli comment --pr 42 --universe-id 123 --place-name "Flipbook Stories 42" --comment-template '## Component preview
 
 {{thumbnailMarkdown}}
 
-[Open the preview]({{launchUrl}})'
+{{launchButton}}'
 ```
 
 ### generate
