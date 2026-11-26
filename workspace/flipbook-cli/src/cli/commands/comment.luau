@@ -1,9 +1,11 @@
 local cli = require("@lpm/batteries@v1.0.1-nightly.20261115/cli")
+local fs = require("@std/fs")
 local json = require("@std/json")
 local process = require("@std/process")
 
 local buttonAssets = require("@root/buttonAssets")
 local getPlaceIdByNameAsync = require("@root/requests/getPlaceIdByNameAsync")
+local getPublishedFrom = require("@root/getPublishedFrom")
 local getUniverseThumbnailAsync = require("@root/requests/getUniverseThumbnailAsync")
 local githubRequest = require("@root/requests/githubRequest")
 local previewButtons = require("@root/previewButtons")
@@ -59,59 +61,65 @@ local function usesButtons(template: string?): boolean
 		or string.find(template, "{{experienceButton}}", 1, true) ~= nil
 end
 
--- Looks up the button images on the default branch. When the comment can't
--- show them, it says why in the log and the comment falls back to text links.
-local function findButtonsBaseUrlAsync(repo: string, assetsDir: string, githubToken: string): string?
-	local info = githubRequest(`https://api.github.com/repos/{repo}`, { token = githubToken })
-	local repository: buttonAssets.Repository = {
-		name = repo,
-		defaultBranch = info.default_branch :: string,
-		private = info.private == true,
-	}
+-- Lists the files in the assets folder on the default branch. A 404 means the
+-- folder isn't there yet, which `findBaseUrl` reports as missing buttons. Any
+-- other failure, such as a token without contents access, is raised so the log
+-- names it.
+local function listAssetsAsync(repo: string, assetsDir: string, ref: string, githubToken: string): { string }
+	local dir = buttonAssets.encodePath(buttonAssets.normalizeDir(assetsDir))
+	local ok, entries = pcall(function()
+		return githubRequest(
+			`https://api.github.com/repos/{repo}/contents/{dir}?ref={buttonAssets.encodePath(ref)}`,
+			{ token = githubToken }
+		)
+	end)
+	if not ok then
+		if string.find(tostring(entries), "(404)", 1, true) then
+			return {}
+		end
+		error(entries, 0)
+	end
 
-	local availableFiles: { string } = {}
-	if not repository.private then
-		local dir = buttonAssets.encodePath(buttonAssets.normalizeDir(assetsDir))
-		local ref = buttonAssets.encodePath(repository.defaultBranch)
-		local ok, entries = pcall(function()
-			return githubRequest(
-				`https://api.github.com/repos/{repo}/contents/{dir}?ref={ref}`,
-				{ token = githubToken }
-			)
-		end)
-		if ok and type(entries) == "table" then
-			for _, entry in entries :: { any } do
-				if type(entry.name) == "string" then
-					table.insert(availableFiles, entry.name)
-				end
+	local files: { string } = {}
+	if type(entries) == "table" then
+		for _, entry in entries :: { any } do
+			if type(entry.name) == "string" then
+				table.insert(files, entry.name)
 			end
 		end
 	end
+	return files
+end
 
-	local baseUrl, reason = buttonAssets.findBaseUrl(repository, assetsDir, availableFiles)
+-- Looks up the button images on the default branch. When the comment can't
+-- show them, it says why in the log and the comment falls back to text links.
+local function findButtonsBaseUrlAsync(repo: string, assetsDir: string, githubToken: string): string?
+	local ok, baseUrl, reason = pcall(function(): (string?, string?)
+		local info = githubRequest(`https://api.github.com/repos/{repo}`, { token = githubToken })
+		local repository: buttonAssets.Repository = {
+			name = repo,
+			defaultBranch = info.default_branch :: string,
+			private = info.private == true,
+		}
+		local files = if repository.private
+			then {}
+			else listAssetsAsync(repo, assetsDir, repository.defaultBranch, githubToken)
+		return buttonAssets.findBaseUrl(repository, assetsDir, files)
+	end)
+
+	if not ok then
+		print(`Showing text links instead of buttons because looking them up failed: {baseUrl}`)
+		return nil
+	end
 	if not baseUrl then
 		print(`Showing text links instead of buttons because {reason}.`)
 	end
 	return baseUrl
 end
 
--- Names the commit and workflow run the preview came from. Actions sets the run
--- variables; elsewhere the footer names only the commit.
-local function getPublishedFrom(
-	repo: string,
-	prNumber: number,
-	githubToken: string
-): storybookPreviewComment.PublishedFrom
-	local pull = githubRequest(`https://api.github.com/repos/{repo}/pulls/{prNumber}`, { token = githubToken })
-	local env = process.env
-	local runUrl = if env.GITHUB_SERVER_URL and env.GITHUB_RUN_ID
-		then `{env.GITHUB_SERVER_URL}/{repo}/actions/runs/{env.GITHUB_RUN_ID}`
-		else nil
-	return {
-		sha = pull.head.sha :: string,
-		runNumber = env.GITHUB_RUN_NUMBER,
-		runUrl = runUrl,
-	}
+local function readFile(filePath: string): string?
+	local ok, contents = pcall(fs.readFileToString, filePath)
+	return if ok then contents else nil
 end
 
 local function run()
@@ -145,7 +153,7 @@ local function run()
 			else nil,
 		placeId = targetPlaceId,
 		launchData = launchData,
-		publishedFrom = getPublishedFrom(repo, prNumber, githubToken),
+		publishedFrom = getPublishedFrom(repo, process.env, readFile),
 		template = commentTemplate,
 		thumbnailUrl = getUniverseThumbnailAsync(universeId),
 	})}`

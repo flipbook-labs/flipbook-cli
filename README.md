@@ -71,7 +71,7 @@ The release download is unauthenticated unless `GITHUB_TOKEN` is set. Set it on 
 
 ### comment
 
-Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready. A footer names the commit the preview came from and, in GitHub Actions, the workflow run.
+Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready. In GitHub Actions, a footer names the commit the workflow deployed and links to its run.
 
 The buttons load from `--assets-dir` on the repository's default branch. The comment shows text links instead when the repository is private, since GitHub only loads comment images from public repositories, or when any button is missing from that folder. The log says which.
 
