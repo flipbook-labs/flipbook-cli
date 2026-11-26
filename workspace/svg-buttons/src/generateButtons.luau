@@ -2,6 +2,7 @@ local png = require("@lpm/png@v0.16.0")
 
 local buildButtonLayers = require("@root/buildButtonLayers")
 local buttonDrawing = require("@root/buttonDrawing")
+local buttonFileNames = require("@root/buttonFileNames")
 local getButtonFont = require("@root/getButtonFont")
 local rasterizeButton = require("@root/rasterizeButton")
 local renderButtonSvg = require("@root/renderButtonSvg")
@@ -17,16 +18,17 @@ local function generateButtons(buttons: { ButtonSpec }): { ButtonFile }
 	local files: { ButtonFile } = {}
 	for _, button in buttons do
 		local layers = buildButtonLayers(font, button, buttonDrawing.metrics)
+		local names = buttonFileNames(button.name)
 		table.insert(files, {
-			name = `{button.name}-light.svg`,
+			name = names.light,
 			contents = renderButtonSvg(layers, button.colorMode.light, button.label),
 		})
 		table.insert(files, {
-			name = `{button.name}-dark.svg`,
+			name = names.dark,
 			contents = renderButtonSvg(layers, button.colorMode.dark, button.label),
 		})
 		table.insert(files, {
-			name = `{button.name}-light.png`,
+			name = names.fallback,
 			contents = png.encodePng(rasterizeButton(layers, button.colorMode.light, buttonDrawing.pngScale)),
 		})
 	end

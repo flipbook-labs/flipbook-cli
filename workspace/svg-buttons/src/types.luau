@@ -54,4 +54,12 @@ export type ButtonFile = {
 	contents: string,
 }
 
+-- The files drawn for one button. `fallback` is a PNG for places that don't
+-- show SVG.
+export type ButtonFileNames = {
+	light: string,
+	dark: string,
+	fallback: string,
+}
+
 return nil

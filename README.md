@@ -46,6 +46,12 @@ flipbook-cli comment --pr 42 --universe-id 123 --place-name "Flipbook Stories 42
 
 Running `comment` again on the same pull request edits the comment it posted earlier.
 
+The comment links to the preview with two buttons, **Open Storybook** and **View on Roblox**. GitHub can't style links in a comment, so the buttons are images your repository hosts. Draw them once with `generate` and commit them to your default branch:
+
+```sh
+flipbook-cli generate
+```
+
 ## Commands
 
 ### deploy
@@ -65,20 +71,23 @@ The release download is unauthenticated unless `GITHUB_TOKEN` is set. Set it on 
 
 ### comment
 
-Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready.
+Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready. A footer names the commit the preview came from and, in GitHub Actions, the workflow run.
 
-| Flag                  | Description                                                |
-| --------------------- | ---------------------------------------------------------- |
-| `--pr`                | **Required.** Pull request number to comment on.           |
-| `--universe-id`       | **Required.** Universe the preview place lives in.         |
-| `--place-name`        | **Required.** Name of the deployed preview place.          |
-| `--launch-data`       | JSON object to include as launch data in the preview link. |
-| `--comment-template`  | Markdown template for the preview comment.                 |
-| `--api-key`           | Open Cloud API key. Falls back to `ROBLOX_API_KEY`.        |
-| `--github-token`      | GitHub token. Falls back to `GITHUB_TOKEN`.                |
-| `--github-repository` | `owner/repo`. Falls back to `GITHUB_REPOSITORY`.           |
+The buttons load from `--assets-dir` on the repository's default branch. The comment shows text links instead when the repository is private, since GitHub only loads comment images from public repositories, or when any button is missing from that folder. The log says which.
 
-Pass `--comment-template` to write the comment's copy and layout yourself. The template supports these placeholders:
+| Flag                  | Description                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| `--pr`                | **Required.** Pull request number to comment on.                                              |
+| `--universe-id`       | **Required.** Universe the preview place lives in.                                            |
+| `--place-name`        | **Required.** Name of the deployed preview place.                                             |
+| `--launch-data`       | JSON object to include as launch data in the preview link.                                    |
+| `--comment-template`  | Markdown template for the preview comment.                                                    |
+| `--assets-dir`        | Folder that holds the buttons from `generate`. Defaults to `.github/deploy-storybook/assets`. |
+| `--api-key`           | Open Cloud API key. Falls back to `ROBLOX_API_KEY`.                                           |
+| `--github-token`      | GitHub token. Falls back to `GITHUB_TOKEN`.                                                   |
+| `--github-repository` | `owner/repo`. Falls back to `GITHUB_REPOSITORY`.                                              |
+
+Pass `--comment-template` to write the comment's copy and layout yourself. A custom template replaces the buttons and the footer, and supports these placeholders:
 
 | Placeholder             | Value                                                                           |
 | ----------------------- | ------------------------------------------------------------------------------- |
@@ -94,6 +103,15 @@ flipbook-cli comment --pr 42 --universe-id 123 --place-name "Flipbook Stories 42
 
 [Open the preview]({{launchUrl}})'
 ```
+
+### generate
+
+Draws the preview comment's buttons as a light SVG, a dark SVG, and a light PNG fallback for each, and writes them to `--assets-dir`. Commit the folder to your default branch so `comment` can link to it.
+
+| Flag           | Description                                                                                                     |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `--assets-dir` | Folder to write the buttons to, relative to the repository root. Defaults to `.github/deploy-storybook/assets`. |
+| `--check`      | Fail if the buttons in the folder are missing or out of date, instead of writing them.                          |
 
 ## Contributing
 
