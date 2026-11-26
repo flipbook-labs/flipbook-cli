@@ -1,7 +1,7 @@
 return {
 	package = {
 		name = "flipbook-cli",
-		version = "0.6.0",
+		version = "0.7.0",
 		dependencies = {
 			["svg-buttons"] = { sourceKind = "path", source = "../svg-buttons" },
 			["flipbook-batteries"] = {

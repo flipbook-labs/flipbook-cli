@@ -2,7 +2,7 @@ return {
 	categories = { "Features", "Changes", "Fixes", "Dependencies", "Internal" },
 	collapsed = { "Dependencies", "Internal" },
 	version = {
-		current = "0.6.0",
+		current = "0.7.0",
 		mirror = {
 			{ file = "workspace/flipbook-cli/pkg.luau" },
 			{ file = "workspace/svg-buttons/pkg.luau" },
