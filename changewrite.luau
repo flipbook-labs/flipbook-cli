@@ -4,7 +4,7 @@ return {
 	version = {
 		current = "0.6.0",
 		mirror = {
-			{ file = "pkg.luau" },
+			{ file = "workspace/flipbook-cli/pkg.luau" },
 		},
 	},
 	kind = {

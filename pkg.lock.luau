@@ -1,8 +1,7 @@
 return {
   version = 5,
   dependencies = {
-    batteries = "batteries@v1.0.1-nightly.20261115",
-    ["flipbook-batteries"] = "flipbook-batteries@v0.13.1",
+    ["flipbook-cli"] = "flipbook-cli",
   },
   devDependencies = {
     ["agent-skills"] = "agent-skills@v0.9.0",
@@ -34,6 +33,17 @@ return {
       dependencies = {
         batteries = "batteries@v1.0.1-nightly.20261115",
       },
+    },
+    ["flipbook-cli"] = {
+      installPath = "workspace/flipbook-cli",
+      name = "flipbook-cli",
+      source = "workspace/flipbook-cli",
+      sourceKind = "path",
+      dependencies = {
+        batteries = "batteries@v1.0.1-nightly.20261115",
+        ["flipbook-batteries"] = "flipbook-batteries@v0.13.1",
+      },
+      devDependencies = {},
     },
   },
 }
