@@ -1,26 +1,19 @@
-local json = require("@std/json")
+local LuauExecution = require("@lpm/luau-execution@v0.2.0")
+local OpenApiRuntime = require("@lpm/openapi-runtime@v0.1.0")
+local parseTaskPath = require("@root/requests/binary-input/parseTaskPath")
 
-local constants = require("@root/requests/binary-input/constants")
-local fetch = require("@root/requests/fetch")
-local types = require("@root/types")
-
-type LuauExecutionContext = types.LuauExecutionContext
-
-local function getTaskLogsAsync(ctx: LuauExecutionContext, taskPath: string): { string }
-	local body = fetch(`{constants.CLOUD_BASE}/{taskPath}/logs`, {
-		method = "GET",
-		headers = { ["x-api-key"] = ctx.apiKey },
+-- Returns each message the task printed, in order.
+local function getTaskLogsAsync(client: OpenApiRuntime.Client, taskIds: parseTaskPath.TaskIds): { string }
+	local response = LuauExecution.listLuauExecutionSessionTaskLogs(client, {
+		universe_id = taskIds.universe_id,
+		place_id = taskIds.place_id,
+		version_id = taskIds.version_id,
+		luau_execution_session_id = taskIds.luau_execution_session_id,
+		task_id = taskIds.task_id,
 	})
-
-	local obj = json.asObject(body)
-	if obj then
-		local sessions = json.asArray(obj.luauExecutionSessionTaskLogs)
-		local session = if sessions and sessions[1] then json.asObject(sessions[1]) else nil
-		if session then
-			return json.asArray(session.messages) :: { string } or {}
-		end
-	end
-	return {}
+	local logs = response.luauExecutionSessionTaskLogs
+	local first = if logs then logs[1] else nil
+	return if first and first.messages then first.messages else {}
 end
 
 return getTaskLogsAsync
