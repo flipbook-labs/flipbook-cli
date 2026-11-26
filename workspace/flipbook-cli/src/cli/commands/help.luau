@@ -3,6 +3,7 @@ local types = require("@root/cli/types")
 
 local commentCommand = require("@root/cli/commands/comment")
 local deployCommand = require("@root/cli/commands/deploy")
+local generateCommand = require("@root/cli/commands/generate")
 
 local title = "help"
 local summary = "Show this help message"
@@ -19,6 +20,10 @@ local function run()
 			{
 				name = "comment",
 				description = commentCommand.summary,
+			},
+			{
+				name = "generate",
+				description = generateCommand.summary,
 			},
 			{
 				name = "help",

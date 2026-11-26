@@ -3,6 +3,7 @@ return {
 		name = "flipbook-cli",
 		version = "0.6.0",
 		dependencies = {
+			["svg-buttons"] = { sourceKind = "path", source = "../svg-buttons" },
 			["flipbook-batteries"] = {
 				rev = "v0.13.1",
 				sourceKind = "github",

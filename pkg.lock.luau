@@ -2,6 +2,7 @@ return {
   version = 5,
   dependencies = {
     ["flipbook-cli"] = "flipbook-cli",
+    ["svg-buttons"] = "svg-buttons",
   },
   devDependencies = {
     ["agent-skills"] = "agent-skills@v0.9.0",
@@ -45,6 +46,7 @@ return {
         ["luau-execution"] = "luau-execution@v0.2.0",
         ["openapi-lute-transport"] = "openapi-lute-transport@v0.1.0",
         places = "places@v0.2.0",
+        ["svg-buttons"] = "svg-buttons",
       },
       devDependencies = {},
     },
@@ -87,6 +89,46 @@ return {
       dependencies = {
         ["openapi-runtime"] = "openapi-runtime@v0.1.0",
       },
+    },
+    ["png@v0.16.0"] = {
+      installPath = "@pkg/changewrite--github-077f00ffb6754ff19796bd387658b34f370ab8ae57ca90b9418541f37d2b6ef9@b5afa4b357cb8b1b3b6ee4eb1dee85bcf18d7d1499384d0fb8a3fc7cdc3c5531/workspace/png",
+      name = "png",
+      rev = "v0.16.0",
+      source = "https://github.com/flipbook-labs/changewrite",
+      sourceKind = "github",
+      target = "workspace/png",
+      dependencies = {},
+    },
+    ["svg-buttons"] = {
+      installPath = "workspace/svg-buttons",
+      name = "svg-buttons",
+      source = "workspace/svg-buttons",
+      sourceKind = "path",
+      dependencies = {
+        batteries = "batteries@v1.0.1-nightly.20261115",
+        png = "png@v0.16.0",
+        truetype = "truetype@v0.16.0",
+        vector = "vector@v0.16.0",
+      },
+      devDependencies = {},
+    },
+    ["truetype@v0.16.0"] = {
+      installPath = "@pkg/changewrite--github-077f00ffb6754ff19796bd387658b34f370ab8ae57ca90b9418541f37d2b6ef9@b5afa4b357cb8b1b3b6ee4eb1dee85bcf18d7d1499384d0fb8a3fc7cdc3c5531/workspace/truetype",
+      name = "truetype",
+      rev = "v0.16.0",
+      source = "https://github.com/flipbook-labs/changewrite",
+      sourceKind = "github",
+      target = "workspace/truetype",
+      dependencies = {},
+    },
+    ["vector@v0.16.0"] = {
+      installPath = "@pkg/changewrite--github-077f00ffb6754ff19796bd387658b34f370ab8ae57ca90b9418541f37d2b6ef9@b5afa4b357cb8b1b3b6ee4eb1dee85bcf18d7d1499384d0fb8a3fc7cdc3c5531/workspace/vector",
+      name = "vector",
+      rev = "v0.16.0",
+      source = "https://github.com/flipbook-labs/changewrite",
+      sourceKind = "github",
+      target = "workspace/vector",
+      dependencies = {},
     },
   },
 }
