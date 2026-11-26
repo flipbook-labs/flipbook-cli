@@ -43,20 +43,31 @@ return {
       dependencies = {
         batteries = "batteries@v1.0.1-nightly.20261115",
         ["flipbook-batteries"] = "flipbook-batteries@v0.13.1",
-        ["luau-execution"] = "luau-execution@v0.2.0",
+        ["open-cloud-luau-execution"] = "open-cloud-luau-execution@v0.2.0",
+        ["open-cloud-places"] = "open-cloud-places@v0.2.0",
         ["openapi-lute-transport"] = "openapi-lute-transport@v0.1.0",
-        places = "places@v0.2.0",
         ["svg-buttons"] = "svg-buttons",
       },
       devDependencies = {},
     },
-    ["luau-execution@v0.2.0"] = {
+    ["open-cloud-luau-execution@v0.2.0"] = {
       installPath = "@pkg/open-cloud--github-9e66f457a9a67ca81390fc58da318796dd8a8d39d2ed101964a3deced3d99789@9fbe06d0103176b8a075ad1f2be9c8b041485afdbe442ba33d16a01769892b04/workspace/luau-execution",
-      name = "luau-execution",
+      name = "open-cloud-luau-execution",
       rev = "v0.2.0",
       source = "https://github.com/flipbook-labs/open-cloud",
       sourceKind = "github",
       target = "workspace/luau-execution",
+      dependencies = {
+        ["openapi-runtime"] = "openapi-runtime@v0.1.0",
+      },
+    },
+    ["open-cloud-places@v0.2.0"] = {
+      installPath = "@pkg/open-cloud--github-9e66f457a9a67ca81390fc58da318796dd8a8d39d2ed101964a3deced3d99789@9fbe06d0103176b8a075ad1f2be9c8b041485afdbe442ba33d16a01769892b04/workspace/places",
+      name = "open-cloud-places",
+      rev = "v0.2.0",
+      source = "https://github.com/flipbook-labs/open-cloud",
+      sourceKind = "github",
+      target = "workspace/places",
       dependencies = {
         ["openapi-runtime"] = "openapi-runtime@v0.1.0",
       },
@@ -78,17 +89,6 @@ return {
       sourceKind = "github",
       target = "workspace/openapi-runtime",
       dependencies = {},
-    },
-    ["places@v0.2.0"] = {
-      installPath = "@pkg/open-cloud--github-9e66f457a9a67ca81390fc58da318796dd8a8d39d2ed101964a3deced3d99789@9fbe06d0103176b8a075ad1f2be9c8b041485afdbe442ba33d16a01769892b04/workspace/places",
-      name = "places",
-      rev = "v0.2.0",
-      source = "https://github.com/flipbook-labs/open-cloud",
-      sourceKind = "github",
-      target = "workspace/places",
-      dependencies = {
-        ["openapi-runtime"] = "openapi-runtime@v0.1.0",
-      },
     },
     ["png@v0.16.0"] = {
       installPath = "@pkg/changewrite--github-077f00ffb6754ff19796bd387658b34f370ab8ae57ca90b9418541f37d2b6ef9@b5afa4b357cb8b1b3b6ee4eb1dee85bcf18d7d1499384d0fb8a3fc7cdc3c5531/workspace/png",

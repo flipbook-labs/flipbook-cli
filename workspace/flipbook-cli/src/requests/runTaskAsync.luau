@@ -2,7 +2,7 @@ local fs = require("@std/fs")
 local json = require("@std/json")
 local path = require("@std/path")
 
-local LuauExecution = require("@lpm/luau-execution@v0.2.0")
+local LuauExecution = require("@lpm/open-cloud-luau-execution@v0.2.0")
 local createOpenCloudClient = require("@root/requests/createOpenCloudClient")
 local getTaskLogsAsync = require("@root/requests/binary-input/getTaskLogsAsync")
 local parseTaskPath = require("@root/requests/binary-input/parseTaskPath")

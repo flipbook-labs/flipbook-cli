@@ -2,7 +2,7 @@ local fs = require("@std/fs")
 local path = require("@std/path")
 
 local OpenApiRuntime = require("@lpm/openapi-runtime@v0.1.0")
-local Places = require("@lpm/places@v0.2.0")
+local Places = require("@lpm/open-cloud-places@v0.2.0")
 local createOpenCloudClient = require("@root/requests/createOpenCloudClient")
 
 local function publishPlaceAsync(universeId: number, placeId: number, rbxlPath: path.Pathlike, apiKey: string)

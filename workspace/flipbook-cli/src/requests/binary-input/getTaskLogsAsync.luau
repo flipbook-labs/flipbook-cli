@@ -1,4 +1,4 @@
-local LuauExecution = require("@lpm/luau-execution@v0.2.0")
+local LuauExecution = require("@lpm/open-cloud-luau-execution@v0.2.0")
 local OpenApiRuntime = require("@lpm/openapi-runtime@v0.1.0")
 local parseTaskPath = require("@root/requests/binary-input/parseTaskPath")
 
