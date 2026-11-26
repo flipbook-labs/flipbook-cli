@@ -3,7 +3,7 @@ local CHANGEWRITE = "https://github.com/flipbook-labs/changewrite"
 return {
 	package = {
 		name = "svg-buttons",
-		version = "0.6.0",
+		version = "0.7.0",
 		dependencies = {
 			batteries = {
 				rev = "v1.0.1-nightly.20261115",
