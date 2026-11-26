@@ -2,6 +2,7 @@ local SvgButtons = require("@workspace/svg-buttons")
 
 local previewButtons = require("@root/previewButtons")
 local storybookPreviewUrl = require("@root/storybookPreviewUrl")
+local storybookQrCodeUrl = require("@root/storybookQrCodeUrl")
 
 export type PublishedFrom = {
 	sha: string,
@@ -21,6 +22,8 @@ export type Options = {
 }
 
 local BUTTON_HEIGHT = 32
+
+local QR_CODE_ALT_TEXT = "QR code for the Storybook preview join link"
 
 local function getButtonLabel(name: string): string
 	for _, button in previewButtons.BUTTONS do
@@ -48,6 +51,22 @@ local function renderLink(name: string, href: string): string
 	return if name == "join" then `[▶ {label}]({href})` else `[{label} ↗]({href})`
 end
 
+-- A reviewer reading the pull request on a computer can scan this with their
+-- phone to open the preview there. It stays collapsed so it doesn't push the
+-- footer down.
+local function renderMobilePreview(launchUrl: string, qrCodeUrl: string): string
+	return table.concat({
+		"<details>",
+		"<summary>📱 Preview on mobile</summary>",
+		"",
+		"Scan to join the preview in the Roblox app.",
+		"",
+		`<a href="{launchUrl}"><img src="{qrCodeUrl}" alt="{QR_CODE_ALT_TEXT}" width="160"></a>`,
+		"",
+		"</details>",
+	}, "\n")
+end
+
 local function renderFooter(publishedFrom: PublishedFrom): string
 	local sha = string.sub(publishedFrom.sha, 1, 7)
 	local run = if publishedFrom.runNumber and publishedFrom.runUrl
@@ -70,6 +89,7 @@ end
 local function storybookPreviewComment(options: Options): string
 	local experienceUrl = `https://www.roblox.com/games/{options.placeId}`
 	local launchUrl = storybookPreviewUrl(options.placeId, options.launchData)
+	local qrCodeUrl = storybookQrCodeUrl(options.placeId, options.launchData)
 	local buttonsBaseUrl = options.buttonsBaseUrl
 	local launchButton = if buttonsBaseUrl
 		then renderButton(buttonsBaseUrl, "join", launchUrl)
@@ -84,6 +104,8 @@ local function storybookPreviewComment(options: Options): string
 			experienceUrl = experienceUrl,
 			launchButton = launchButton,
 			launchUrl = launchUrl,
+			qrCodeMarkdown = `[![{QR_CODE_ALT_TEXT}]({qrCodeUrl})]({launchUrl})`,
+			qrCodeUrl = qrCodeUrl,
 			thumbnailMarkdown = if options.thumbnailUrl
 				then `[![Flipbook Storybook preview]({options.thumbnailUrl})]({experienceUrl})`
 				else "",
@@ -106,6 +128,8 @@ local function storybookPreviewComment(options: Options): string
 		sections,
 		if buttonsBaseUrl then `{launchButton} {experienceButton}` else `- {launchButton}\n- {experienceButton}`
 	)
+
+	table.insert(sections, renderMobilePreview(launchUrl, qrCodeUrl))
 
 	if options.publishedFrom then
 		table.insert(sections, renderFooter(options.publishedFrom))

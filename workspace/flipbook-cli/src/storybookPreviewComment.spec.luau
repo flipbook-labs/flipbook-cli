@@ -4,6 +4,15 @@ local storybookPreviewComment = require("@root/storybookPreviewComment")
 
 local BASE_URL = "https://raw.githubusercontent.com/owner/repo/main/.github/deploy-storybook/assets"
 
+local MOBILE_PREVIEW = [[<details>
+<summary>📱 Preview on mobile</summary>
+
+Scan to join the preview in the Roblox app.
+
+<a href="https://www.roblox.com/games/start?placeId=101"><img src="https://apis.flipbooklabs.com/storybook/qr/101.svg" alt="QR code for the Storybook preview join link" width="160"></a>
+
+</details>]]
+
 test.suite("storybookPreviewComment", function(suite)
 	suite:case("renders buttons beside the thumbnail with a footer", function(assert)
 		local body = storybookPreviewComment({
@@ -25,6 +34,11 @@ test.suite("storybookPreviewComment", function(suite)
 
 <a href="https://www.roblox.com/games/start?placeId=101"><picture><source media="(prefers-color-scheme: dark)" srcset="BASE_URL/join-dark.svg"><source media="(prefers-color-scheme: light)" srcset="BASE_URL/join-light.svg"><img src="BASE_URL/join-light.png" alt="Open Storybook" height="32"></picture></a> <a href="https://www.roblox.com/games/101"><picture><source media="(prefers-color-scheme: dark)" srcset="BASE_URL/experience-dark.svg"><source media="(prefers-color-scheme: light)" srcset="BASE_URL/experience-light.svg"><img src="BASE_URL/experience-light.png" alt="View on Roblox" height="32"></picture></a>
 
+]]
+						.. MOBILE_PREVIEW
+						.. [[
+
+
 <sub>Published from 1b829ec in [run 42](https://github.com/owner/repo/actions/runs/9). Each push replaces this comment.</sub>]],
 					"BASE_URL",
 					BASE_URL
@@ -38,10 +52,23 @@ test.suite("storybookPreviewComment", function(suite)
 			placeId = 101,
 		})
 
+		assert.eq(body, [[- [▶ Open Storybook](https://www.roblox.com/games/start?placeId=101)
+- [View on Roblox ↗](https://www.roblox.com/games/101)
+
+]] .. MOBILE_PREVIEW)
+	end)
+
+	suite:case("encodes launch data into the QR code URL", function(assert)
+		local body = storybookPreviewComment({
+			placeId = 101,
+			launchData = '{"search":"Button"}',
+			template = "{{launchUrl}}\n{{qrCodeUrl}}",
+		})
+
 		assert.eq(
 			body,
-			[[- [▶ Open Storybook](https://www.roblox.com/games/start?placeId=101)
-- [View on Roblox ↗](https://www.roblox.com/games/101)]]
+			"https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D\n"
+				.. "https://apis.flipbooklabs.com/storybook/qr/101.svg?launchData=%7B%22search%22%3A%22Button%22%7D"
 		)
 	end)
 
@@ -66,7 +93,9 @@ test.suite("storybookPreviewComment", function(suite)
 
 [Open experience]({{experienceUrl}}) · [Join focused preview]({{launchUrl}})
 
-Raw image: {{thumbnailUrl}}]],
+Raw image: {{thumbnailUrl}}
+
+{{qrCodeMarkdown}}]],
 			thumbnailUrl = "https://images.example/preview%20image.png",
 		})
 
@@ -78,7 +107,9 @@ Raw image: {{thumbnailUrl}}]],
 
 [Open experience](https://www.roblox.com/games/101) · [Join focused preview](https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D)
 
-Raw image: https://images.example/preview%20image.png]]
+Raw image: https://images.example/preview%20image.png
+
+[![QR code for the Storybook preview join link](https://apis.flipbooklabs.com/storybook/qr/101.svg?launchData=%7B%22search%22%3A%22Button%22%7D)](https://www.roblox.com/games/start?placeId=101&launchData=%7B%22search%22%3A%22Button%22%7D)]]
 		)
 	end)
 
