@@ -1,42 +1,30 @@
-local json = require("@std/json")
 local task = require("@std/task")
 
-local constants = require("@root/requests/binary-input/constants")
-local fetch = require("@root/requests/fetch")
-local types = require("@root/types")
+local LuauExecution = require("@lpm/open-cloud-luau-execution@v0.2.0")
+local OpenApiRuntime = require("@lpm/openapi-runtime@v0.1.0")
+local parseTaskPath = require("@root/requests/binary-input/parseTaskPath")
 
-type LuauExecutionContext = types.LuauExecutionContext
+-- How long to wait between task-status polls.
+local POLL_INTERVAL_SECONDS = 2
 
-export type TaskResult = {
-	state: string,
-	error: { code: string, message: string }?,
-}
-
-local function waitForTaskCompletion(ctx: LuauExecutionContext, taskPath: string): TaskResult
+-- Polls a task until it leaves the queue and finishes running, then returns it.
+local function waitForTaskCompletion(
+	client: OpenApiRuntime.Client,
+	taskIds: parseTaskPath.TaskIds
+): LuauExecution.LuauExecutionSessionTask
 	while true do
-		local body = fetch(`{constants.CLOUD_BASE}/{taskPath}`, {
-			method = "GET",
-			headers = { ["x-api-key"] = ctx.apiKey },
+		local current = LuauExecution.getLuauExecutionSessionTask(client, {
+			universe_id = taskIds.universe_id,
+			place_id = taskIds.place_id,
+			version_id = taskIds.version_id,
+			luau_execution_session_id = taskIds.luau_execution_session_id,
+			task_id = taskIds.task_id,
 		})
-
-		local obj = json.asObject(body)
-		if obj then
-			local state = obj.state :: string
-			if state ~= "PROCESSING" and state ~= "QUEUED" then
-				local err = json.asObject(obj.error)
-				return {
-					state = state,
-					error = if err
-						then {
-							code = err.code :: string,
-							message = err.message :: string,
-						}
-						else nil,
-				}
-			end
+		if current.state ~= "PROCESSING" and current.state ~= "QUEUED" then
+			return current
 		end
 
-		task.wait(constants.POLL_INTERVAL_SECONDS)
+		task.wait(POLL_INTERVAL_SECONDS)
 	end
 end
 
