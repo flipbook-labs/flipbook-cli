@@ -65,7 +65,7 @@ The release download is unauthenticated unless `GITHUB_TOKEN` is set. Set it on 
 
 ### comment
 
-Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links.
+Posts or updates the preview comment on a pull request. The place named by `--place-name` supplies the links, and the experience thumbnail is included when Roblox has one ready.
 
 | Flag                  | Description                                                |
 | --------------------- | ---------------------------------------------------------- |
@@ -73,9 +73,27 @@ Posts or updates the preview comment on a pull request. The place named by `--pl
 | `--universe-id`       | **Required.** Universe the preview place lives in.         |
 | `--place-name`        | **Required.** Name of the deployed preview place.          |
 | `--launch-data`       | JSON object to include as launch data in the preview link. |
+| `--comment-template`  | Markdown template for the preview comment.                 |
 | `--api-key`           | Open Cloud API key. Falls back to `ROBLOX_API_KEY`.        |
 | `--github-token`      | GitHub token. Falls back to `GITHUB_TOKEN`.                |
 | `--github-repository` | `owner/repo`. Falls back to `GITHUB_REPOSITORY`.           |
+
+Pass `--comment-template` to write the comment's copy and layout yourself. The template supports these placeholders:
+
+| Placeholder             | Value                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `{{experienceUrl}}`     | Roblox experience page for the deployed place.                                  |
+| `{{launchUrl}}`         | Direct join URL, including `--launch-data` when supplied.                       |
+| `{{thumbnailUrl}}`      | Experience thumbnail URL, or an empty string when the thumbnail is unavailable. |
+| `{{thumbnailMarkdown}}` | Linked experience thumbnail, or an empty string when it is unavailable.         |
+
+```sh
+flipbook-cli comment --pr 42 --universe-id 123 --place-name "Flipbook Stories 42" --comment-template '## Component preview
+
+{{thumbnailMarkdown}}
+
+[Open the preview]({{launchUrl}})'
+```
 
 ## Contributing
 
